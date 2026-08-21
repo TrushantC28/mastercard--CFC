@@ -72,3 +72,26 @@ export const validateProposalListQuery = (req, res, next) => {
 
     next();
 };
+
+export const validateProposalDecision = (req, res, next) => {
+    const { id } = req.params;
+    const { reviewNotes } = req.body;
+    const fields = {};
+
+    if (!/^[a-fA-F0-9]{24}$/.test(id)) {
+        fields.id = "Must be a valid proposal ID.";
+    }
+
+    if (reviewNotes !== undefined && typeof reviewNotes !== "string") {
+        fields.reviewNotes = "Must be a string.";
+    }
+
+    if (Object.keys(fields).length > 0) {
+        const error = new ApiError(400, "Invalid proposal decision input.");
+        error.fields = fields;
+        error.code = "VALIDATION_ERROR";
+        throw error;
+    }
+
+    next();
+};

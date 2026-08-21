@@ -2,8 +2,10 @@ import asyncHandler from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import {
+    approveProposal as approveProposalRecord,
     createProposal as createProposalRecord,
     listProposals as listProposalRecords,
+    rejectProposal as rejectProposalRecord,
 } from "../services/proposal.service.js";
 
 export const createProposal = asyncHandler(async (req, res) => {
@@ -47,4 +49,39 @@ export const getProposals = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(new ApiResponse(200, proposals, "Proposals fetched successfully"));
+});
+
+export const approveProposal = asyncHandler(async (req, res) => {
+    const adminId = req.user?._id || req.user?.userId;
+
+    const result = await approveProposalRecord({
+        proposalId: req.params.id,
+        adminId,
+        reviewNotes: req.body.reviewNotes,
+    });
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                proposal: result.proposal,
+                createdActivity: result.activity,
+            },
+            "Proposal approved and activity created successfully"
+        )
+    );
+});
+
+export const rejectProposal = asyncHandler(async (req, res) => {
+    const adminId = req.user?._id || req.user?.userId;
+
+    const proposal = await rejectProposalRecord({
+        proposalId: req.params.id,
+        adminId,
+        reviewNotes: req.body.reviewNotes,
+    });
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, proposal, "Proposal rejected successfully"));
 });
