@@ -1,5 +1,6 @@
 import { classifyTextWithRules } from "./services/classifier.service.js";
 import { notifyProposalDecision, notifyEventReminder, notifyFeedbackPrompt, notifyUrgentFeedbackAlert } from "./services/notification.service.js";
+import { runAiPatternAnalysis, updateActionEffectiveness } from "./services/aiInsight.service.js";
 
 async function runBackendTests() {
     console.log("=================================================");
@@ -53,6 +54,11 @@ async function runBackendTests() {
 
     const res3 = await notifyFeedbackPrompt({ volunteerEmail: "vol@test.com", activityTitle: "Plantation", activityId: "act123" });
     assert(typeof res3 === "object" && res3 !== null, "notifyFeedbackPrompt executes safely");
+
+    // 3. AI Intelligence & Pattern Analysis Test
+    console.log("\n--- 3. Testing AI Intelligence & Recommendation Engine ---");
+    assert(typeof runAiPatternAnalysis === "function", "runAiPatternAnalysis function exported properly");
+    assert(typeof updateActionEffectiveness === "function", "updateActionEffectiveness learning function exported properly");
 
     console.log("\n=================================================");
     console.log(`📊 FINAL TEST RESULT: ${passed}/${total} PASSED`);

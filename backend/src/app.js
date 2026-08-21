@@ -8,6 +8,7 @@ import proposalRouter from "./routes/proposal.routes.js";
 import activityRouter from "./routes/activity.routes.js";
 import registrationRouter from "./routes/registration.routes.js";
 import feedbackRouter from "./routes/feedback.routes.js";
+import aiInsightRouter from "./routes/aiInsight.routes.js";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/proposals", proposalRouter);
 app.use("/activities", activityRouter);
 app.use("/", registrationRouter);
 app.use("/", feedbackRouter);
+app.use("/", aiInsightRouter);
 
 // Global Error Handler
 app.use(errorHandler);

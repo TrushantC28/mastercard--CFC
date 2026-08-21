@@ -1,6 +1,7 @@
 import Feedback from "../models/feedback.model.js";
 import FeedbackTheme from "../models/feedbackTheme.model.js";
 import { notifyUrgentFeedbackAlert } from "./notification.service.js";
+import { runAiPatternAnalysis } from "./aiInsight.service.js";
 
 const URGENT_KEYWORDS = [
     "urgent", "emergency", "injury", "safety", "poisoning", "terrible", 
@@ -54,8 +55,8 @@ export const classifyTextWithRules = (combinedText, themesList) => {
 
 /**
  * Asynchronous, non-blocking classification runner.
- * Analyzes text, extracts themes, detects urgent concerns (rating <= 2 or urgent keywords),
- * updates feedback doc, and sends real-time admin alert if urgent.
+ * Analyzes text, extracts themes, detects urgent concerns, triggers admin alert,
+ * and runs AI Pattern Finder to generate actionable operational recommendations.
  * 
  * @param {string|ObjectId} feedbackId 
  */
@@ -97,6 +98,12 @@ export const classifyFeedbackAsync = async (feedbackId) => {
                 overallRating: feedback.overallRating,
                 comments: feedback.comments,
             });
+        }
+
+        // 4. AI Intelligence Pipeline: Run pattern analysis and generate recommendations
+        const actId = feedback.activityId?._id || feedback.activityId;
+        if (actId) {
+            await runAiPatternAnalysis(actId);
         }
     } catch (err) {
         console.error(`[Async Classification] Error processing feedback ${feedbackId}:`, err.message);
