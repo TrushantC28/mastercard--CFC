@@ -1,11 +1,14 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './Navbar.css';
 
 const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="nav-left">
-        <h1 className="logo-text">SevaSahayog</h1>
+        <Link to="/" style={{ textDecoration: 'none' }}>
+          <h1 className="logo-text">SevaSahayog</h1>
+        </Link>
       </div>
       
       <div className="nav-center">
@@ -13,8 +16,9 @@ const Navbar = () => {
       </div>
       
       <div className="nav-right">
-        <button className="btn btn-login">Login</button>
-        <button className="btn btn-signup">Sign Up</button>
+        <Link to="/login">
+          <button className="btn btn-login">Login</button>
+        </Link>
       </div>
     </nav>
   );

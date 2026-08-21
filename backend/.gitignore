@@ -110,3 +110,6 @@ public/temp/*
 # OS metadata
 .DS_Store
 Thumbs.db
+env.text
+API_TESTING_GUIDE.md
+IMPLEMENTATION_SUMMARY.md

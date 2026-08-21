@@ -1,11 +1,15 @@
 import ApiError from "../utils/ApiError.js";
 
 export const errorHandler = (err, req, res, next) => {
-    const statusCode = err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
+    let statusCode = err.statusCode || 500;
+    let message = err.message || "Internal Server Error";
     let errorCode = "INTERNAL_ERROR";
-    if (err.code && typeof err.code === "string") {
+
+    if (err.name === "CastError") {
+        statusCode = 400;
+        errorCode = "BAD_REQUEST";
+        message = `Invalid format for ${err.path}: ${err.value}`;
+    } else if (err.code && typeof err.code === "string") {
         errorCode = err.code;
     } else if (statusCode === 400) {
         errorCode = "BAD_REQUEST";
