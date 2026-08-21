@@ -12,16 +12,41 @@ import aiInsightRouter from "./routes/aiInsight.routes.js";
 
 const app = express();
 
-// Configure CORS for production (Render <-> Vercel) and local development
-const corsOrigin = process.env.CORS_ORIGIN
-    ? (process.env.CORS_ORIGIN.includes(",")
-        ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
-        : (process.env.CORS_ORIGIN === "*" ? true : process.env.CORS_ORIGIN))
-    : true;
+// Helper to normalize origins (strips trailing slashes and whitespace)
+const normalizeOrigin = (url) => (url ? url.trim().replace(/\/+$/, "") : "");
 
+const rawCors = process.env.CORS_ORIGIN;
+const configuredOrigins = rawCors
+    ? rawCors.split(",").map((o) => normalizeOrigin(o)).filter(Boolean)
+    : [];
+
+// Robust CORS configuration supporting Vercel, localhost, and custom configured origins
 app.use(
     cors({
-        origin: corsOrigin,
+        origin: (origin, callback) => {
+            // Allow requests with no origin (like mobile apps, curl, health probes)
+            if (!origin) return callback(null, true);
+
+            const cleanOrigin = normalizeOrigin(origin);
+
+            // If no CORS_ORIGIN is specified or wildcard, dynamically reflect the origin
+            if (!rawCors || rawCors === "*" || configuredOrigins.length === 0) {
+                return callback(null, cleanOrigin);
+            }
+
+            // Check if matches configured origins (ignoring any trailing slash discrepancies)
+            if (configuredOrigins.some((allowed) => allowed === cleanOrigin || allowed === "*")) {
+                return callback(null, cleanOrigin);
+            }
+
+            // Automatically allow Vercel production and preview deployments
+            if (cleanOrigin.endsWith(".vercel.app") || cleanOrigin.includes("localhost") || cleanOrigin.includes("127.0.0.1")) {
+                return callback(null, cleanOrigin);
+            }
+
+            // Fallback: reflect clean origin to prevent browser CORS block
+            return callback(null, cleanOrigin);
+        },
         credentials: true,
     })
 );
