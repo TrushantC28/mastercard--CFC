@@ -31,7 +31,6 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-    // Handle ApiResponse format wrapper ({ success, data: { token, user } })
     const token = res.data?.token || res.token || res.data?.accessToken;
     const user = res.data?.user || res.user;
     if (token) localStorage.setItem('token', token);
@@ -45,11 +44,70 @@ export const authApi = {
     });
     return res.data || res;
   },
+  getMe: () => request('/users/me'),
+  logout: async () => {
+    try {
+      await request('/auth/logout', { method: 'POST' });
+    } catch {}
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  },
 };
 
 export const activityApi = {
-  getActivities: () => request('/activities'),
+  getActivities: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/activities${query ? `?${query}` : ''}`);
+  },
   getActivityById: (id) => request(`/activities/${id}`),
+  createActivity: (payload) =>
+    request('/activities', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateStatus: (id, status) =>
+    request(`/activities/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+};
+
+export const proposalApi = {
+  getProposals: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/proposals${query ? `?${query}` : ''}`);
+  },
+  createProposal: (payload) =>
+    request('/proposals', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  approveProposal: (id, payload = {}) =>
+    request(`/proposals/${id}/approve`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  rejectProposal: (id, payload = {}) =>
+    request(`/proposals/${id}/reject`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+};
+
+export const registrationApi = {
+  registerForActivity: (activityId) =>
+    request(`/activities/${activityId}/register`, {
+      method: 'POST',
+    }),
+  getActivityRegistrations: (activityId) =>
+    request(`/activities/${activityId}/registrations`),
+  getMyRegistrations: (userId = 'me') =>
+    request(`/users/${userId}/registrations`),
+  markAttendance: (registrationId, status) =>
+    request(`/registrations/${registrationId}/attendance`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
 };
 
 export const feedbackApi = {
@@ -61,6 +119,10 @@ export const feedbackApi = {
   getFeedback: (params = {}) => {
     const query = new URLSearchParams(params).toString();
     return request(`/feedback${query ? `?${query}` : ''}`);
+  },
+  getAnalytics: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/feedback/analytics${query ? `?${query}` : ''}`);
   },
   exportCSV: async (params = {}) => {
     const token = localStorage.getItem('token');
@@ -80,6 +142,13 @@ export const feedbackApi = {
   },
 };
 
+export const userApi = {
+  getUsers: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/users${query ? `?${query}` : ''}`);
+  },
+};
+
 export const aiInsightApi = {
   getInsights: (params = {}) => {
     const query = new URLSearchParams(params).toString();
@@ -91,3 +160,4 @@ export const aiInsightApi = {
       body: JSON.stringify(payload),
     }),
 };
+

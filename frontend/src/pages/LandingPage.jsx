@@ -23,9 +23,17 @@ const LandingPage = () => {
           <p className="hero-subtitle">
             Every volunteering experience has a story. Share yours and help us create better experiences for every volunteer.
           </p>
-          <p className="hero-support-text" style={{marginTop: '2rem'}}>
-            Your feedback helps SevaSahayog improve every volunteering experience. Please login to share your experience or view upcoming activities.
+          <p className="hero-support-text" style={{marginTop: '1.5rem'}}>
+            Your feedback helps SevaSahayog improve every volunteering experience. Please login to share your experience or access portal features.
           </p>
+          <div style={{marginTop: '2rem'}}>
+            <a
+              href="/login"
+              className="inline-block px-6 py-3.5 bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-base rounded-xl transition-all shadow-md hover:shadow-lg"
+            >
+              Login to Get Started →
+            </a>
+          </div>
         </div>
       </section>
 

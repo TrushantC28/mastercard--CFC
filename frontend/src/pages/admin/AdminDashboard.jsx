@@ -6,26 +6,45 @@ import StatusBadge from '../../components/admin/StatusBadge';
 import { summaryStats, mockEvents, mockFeedback } from '../../data/adminMockData';
 
 const AdminDashboard = () => {
-  const upcomingEvents = mockEvents.filter(e => e.status === 'Upcoming').slice(0, 3);
+  const upcomingEvents = mockEvents.filter(e => e.status === 'Upcoming' || e.status === 'open_for_signup').slice(0, 3);
   const recentFeedback = mockFeedback.slice(0, 3);
 
   return (
     <AdminLayout
-      title="Admin Dashboard"
-      subtitle="Here's an overview of your NGO activities and volunteer feedback."
+      title="Admin NGO Dashboard"
+      subtitle="Overview of SevaSahayog volunteering initiatives, corporate proposals, and experience analytics."
     >
+      {/* Pending Proposal Queue Banner */}
+      <div className="bg-emerald-600 text-white rounded-xl p-5 mb-8 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <span className="bg-emerald-700/80 text-emerald-100 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border border-emerald-500">
+            Action Required
+          </span>
+          <h2 className="text-lg font-bold mt-1">2 Pending Activity Proposals from Corporate SPOCs</h2>
+          <p className="text-xs text-emerald-100 font-medium">
+            Review proposed drives, approve slots, or provide feedback notes to SPOC coordinators.
+          </p>
+        </div>
+        <Link
+          to="/admin/proposals"
+          className="px-4 py-2 bg-white text-emerald-800 font-bold text-xs rounded-lg hover:bg-emerald-50 transition-colors shadow cursor-pointer whitespace-nowrap self-start sm:self-center"
+        >
+          Review Proposals →
+        </Link>
+      </div>
+
       {/* 4 Summary Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
         <StatCard
-          title="Total Events"
+          title="Total Activities"
           value={summaryStats.totalEvents}
-          subtext="35 activities organized"
+          subtext="Across all partner networks"
           icon="📅"
         />
         <StatCard
-          title="Total Volunteers"
+          title="Registered Volunteers"
           value={summaryStats.totalVolunteers}
-          subtext="Across all partners"
+          subtext="Active community members"
           icon="👥"
         />
         <StatCard
@@ -47,7 +66,7 @@ const AdminDashboard = () => {
         {/* Left 2 Cols: Upcoming Events */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-gray-900">Upcoming Events</h2>
+            <h2 className="text-base font-bold text-gray-900">Upcoming Volunteering Activities</h2>
             <Link
               to="/admin/events"
               className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
@@ -60,15 +79,15 @@ const AdminDashboard = () => {
             {upcomingEvents.map((evt) => (
               <div
                 key={evt.id}
-                className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-gray-900 text-sm">{evt.name}</h3>
+                    <h3 className="font-bold text-gray-900 text-sm">{evt.name || evt.title}</h3>
                     <StatusBadge status={evt.status} />
                   </div>
                   <p className="text-xs text-gray-500 font-medium">
-                    📅 {evt.date} • ⏰ {evt.time}
+                    📅 {evt.date} • ⏰ {evt.time || '9:00 AM'}
                   </p>
                   <p className="text-xs text-gray-500 font-medium">
                     📍 {evt.location} • 🏢 {evt.organizer}
@@ -79,10 +98,10 @@ const AdminDashboard = () => {
                 </div>
 
                 <Link
-                  to={`/admin/events/${evt.id}`}
+                  to={`/admin/events`}
                   className="self-start sm:self-center px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-colors shadow-sm"
                 >
-                  View Details
+                  Manage Status
                 </Link>
               </div>
             ))}
@@ -97,11 +116,11 @@ const AdminDashboard = () => {
               to="/admin/feedback"
               className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
             >
-              View All Feedback →
+              View Feedback Intelligence →
             </Link>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm divide-y divide-gray-100">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm divide-y divide-gray-100">
             {recentFeedback.map((fb) => (
               <div key={fb.id} className="p-4 space-y-1.5">
                 <div className="flex items-center justify-between">

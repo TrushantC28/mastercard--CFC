@@ -6,6 +6,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
 
   const navItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: '📊' },
+    { label: 'Proposals Queue', path: '/admin/proposals', icon: '📥' },
     { label: 'Events', path: '/admin/events', icon: '📅' },
     { label: 'Volunteers', path: '/admin/volunteers', icon: '👥' },
     { label: 'SPOCs / Corporate Partners', path: '/admin/spocs', icon: '🏢' },
