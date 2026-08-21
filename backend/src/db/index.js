@@ -6,8 +6,8 @@ const connectDB = async () => {
     try {
         let uri = process.env.MONGODB_URI;
         if (!uri) {
-            console.error("MONGODB_URI is not set in environment variables!");
-            process.exit(1);
+            console.error("⚠️ MONGODB_URI is not set in environment variables!");
+            throw new Error("MONGODB_URI environment variable is missing");
         }
 
         if (!uri.includes(DB_NAME)) {
@@ -23,7 +23,7 @@ const connectDB = async () => {
         return connectionInstance;
     } catch (error) {
         console.error("MONGODB connection FAILED: ", error.message || error);
-        process.exit(1);
+        throw error;
     }
 };
 
