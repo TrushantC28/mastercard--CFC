@@ -1,106 +1,163 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, CalendarDays, MessageSquare, User, LogOut, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import { volunteerProfile } from '../data/mockData';
 
 const DashboardLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Check localStorage, if not present use mock profile for volunteer
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        setUser(volunteerProfile);
+      }
+    } else {
+      setUser(volunteerProfile); // Default to volunteer mock data if not logged in
+    }
+  }, []);
+
   const handleLogout = () => {
-    // Basic logout handling for now
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
     navigate('/login');
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Events', path: '/events', icon: CalendarDays },
-    { name: 'Feedback', path: '/feedback', icon: MessageSquare },
-    { name: 'Profile', path: '/profile', icon: User },
+    { name: 'Dashboard', path: '/dashboard' },
+    { name: 'Events', path: '/events' },
+    { name: 'Feedback', path: '/feedback' },
+    { name: 'Profile', path: '/profile' },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-20 bg-black/50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+      {/* Top Navbar */}
+      <header className="bg-[#1a4760] border-b border-[#13364a] sticky top-0 z-30 shadow-md">
+        <div className="w-full px-6 sm:px-12 lg:px-16">
+          <div className="flex justify-between items-center h-20">
+            
+            {/* Logo */}
+            <div className="flex-shrink-0 flex items-center">
+              <span className="text-3xl font-black text-white tracking-tight">SevaSahayog</span>
+            </div>
 
-      {/* Sidebar */}
-      <aside 
-        className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="h-full flex flex-col">
-          {/* Logo */}
-          <div className="h-16 flex items-center px-6 border-b border-gray-200">
-            <span className="text-xl font-bold text-blue-600">SevaSahayog</span>
-            <button 
-              className="ml-auto lg:hidden text-gray-500 hover:text-gray-700"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X size={20} />
-            </button>
-          </div>
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex gap-10 h-full ml-16 flex-1 items-center">
+              {navItems.map((item) => {
+                return (
+                  <NavLink
+                    key={item.name}
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `inline-flex items-center h-full px-4 border-b-4 text-base font-bold tracking-wide transition-colors ${
+                        isActive 
+                          ? 'border-amber-400 text-amber-400' 
+                          : 'border-transparent text-white hover:text-amber-200 hover:border-amber-200/50'
+                      }`
+                    }
+                  >
+                    {item.name}
+                  </NavLink>
+                );
+              })}
+            </nav>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink
-                  key={item.name}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors ${
-                      isActive 
-                        ? 'bg-blue-50 text-blue-700' 
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`
-                  }
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <Icon size={20} />
-                  {item.name}
-                </NavLink>
-              );
-            })}
-          </nav>
+            {/* Right Side - User & Logout (Desktop) */}
+            <div className="hidden md:flex items-center gap-8">
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-base font-black text-white leading-tight">
+                    {user?.name || 'Volunteer'}
+                  </p>
+                  <p className="text-xs font-bold text-amber-400 uppercase tracking-widest mt-0.5">
+                    {user?.role || 'VOLUNTEER'}
+                  </p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-amber-400 flex items-center justify-center text-[#1a4760] font-black text-xl shadow-inner">
+                  {user?.name?.charAt(0) || 'V'}
+                </div>
+              </div>
+              <div className="w-px h-10 bg-[#285d7c]"></div>
+              <button
+                onClick={handleLogout}
+                className="text-white font-bold hover:text-amber-400 transition-colors px-4 py-2 rounded-xl hover:bg-[#13364a] flex items-center gap-2 tracking-wide"
+                title="Logout"
+              >
+                Logout
+              </button>
+            </div>
 
-          {/* User/Logout Area */}
-          <div className="p-4 border-t border-gray-200">
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg font-medium text-gray-600 hover:bg-red-50 hover:text-red-700 transition-colors"
-            >
-              <LogOut size={20} />
-              Logout
-            </button>
+            {/* Mobile Menu Button */}
+            <div className="flex items-center md:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="text-white hover:text-amber-400 p-3 rounded-xl hover:bg-[#13364a] transition-colors"
+              >
+                {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+              </button>
+            </div>
           </div>
         </div>
-      </aside>
+
+        {/* Mobile Navigation Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-[#13364a] bg-[#1a4760]">
+            <div className="px-6 pt-6 pb-8 space-y-2 shadow-inner">
+              {/* User Profile Mobile */}
+              <div className="flex items-center gap-4 mb-8 p-3 border-b border-[#285d7c] pb-6">
+                <div className="w-12 h-12 rounded-full bg-amber-400 flex items-center justify-center text-[#1a4760] font-black text-xl shadow-inner">
+                  {user?.name?.charAt(0) || 'V'}
+                </div>
+                <div>
+                  <p className="text-base font-black text-white">
+                    {user?.name || 'Volunteer'}
+                  </p>
+                  <p className="text-xs font-bold text-amber-400 uppercase tracking-widest mt-0.5">
+                    {user?.role || 'VOLUNTEER'}
+                  </p>
+                </div>
+              </div>
+
+              {navItems.map((item) => {
+                return (
+                  <NavLink
+                    key={item.name}
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `flex items-center px-4 py-4 rounded-2xl text-base font-bold tracking-wide transition-all ${
+                        isActive 
+                          ? 'bg-[#13364a] text-amber-400 border-l-4 border-amber-400' 
+                          : 'text-white hover:bg-[#13364a] hover:text-amber-200 border-l-4 border-transparent'
+                      }`
+                    }
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item.name}
+                  </NavLink>
+                );
+              })}
+              
+              <button
+                onClick={handleLogout}
+                className="flex items-center justify-center px-4 py-4 mt-6 w-full rounded-2xl text-base font-bold text-red-400 hover:bg-red-400/10 transition-all tracking-wide"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        )}
+      </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* Top Header */}
-        <header className="h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 bg-white border-b border-gray-200 lg:hidden">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-            >
-              <Menu size={24} />
-            </button>
-            <span className="text-lg font-bold text-blue-600">SevaSahayog</span>
-          </div>
-        </header>
-
-        {/* Page Content */}
-        <div className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8 text-left">
-          <Outlet />
+      <main className="flex-1 flex flex-col">
+        <div className="flex-1 w-full max-w-[1500px] mx-auto px-6 lg:px-8 py-8 text-left">
+          <Outlet context={{ user }} />
         </div>
       </main>
     </div>

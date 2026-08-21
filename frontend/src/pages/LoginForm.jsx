@@ -52,7 +52,24 @@ const LoginForm = () => {
       // Navigate to dashboard
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'Failed to login');
+      console.error("Login submission error:", err, err?.response?.data);
+      
+      let errorMessage = 'Login failed. Please check your email and password.';
+      
+      if (err?.response?.data) {
+        const data = err.response.data;
+        if (typeof data.message === 'string') {
+          errorMessage = data.message;
+        } else if (typeof data.error === 'string') {
+          errorMessage = data.error;
+        } else if (data.error && typeof data.error.message === 'string') {
+          errorMessage = data.error.message;
+        }
+      } else if (err?.message && err.message !== '[object Object]' && err.message !== 'Something went wrong') {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
