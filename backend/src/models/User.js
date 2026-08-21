@@ -81,15 +81,13 @@ userSchema.virtual("password")
     });
 
 // Pre-save hook: Hashes password before saving only if passwordHash was modified
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
     if (!this.isModified("passwordHash")) {
-        return next ? next() : undefined;
+        return;
     }
 
     const salt = await bcrypt.genSalt(10);
     this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
-
-    if (next) next();
 });
 
 // Instance method to verify password
