@@ -13,6 +13,11 @@ const feedbackThemeSchema = new mongoose.Schema(
             enum: ["positive", "negative", "neutral", "urgent"],
             required: true,
         },
+        keywords: [
+            {
+                type: String,
+            },
+        ],
     },
     {
         collection: "feedbackThemes",
