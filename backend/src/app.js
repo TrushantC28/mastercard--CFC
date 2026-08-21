@@ -6,6 +6,7 @@ import authRouter from "./routes/auth.routes.js";
 import userRouter from "./routes/user.routes.js";
 import proposalRouter from "./routes/proposal.routes.js";
 import activityRouter from "./routes/activity.routes.js";
+import registrationRouter from "./routes/registration.routes.js";
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/proposals", proposalRouter);
 app.use("/activities", activityRouter);
+app.use("/", registrationRouter);
 
 // Global Error Handler
 app.use(errorHandler);
