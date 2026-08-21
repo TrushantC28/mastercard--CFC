@@ -5,9 +5,11 @@ import { volunteerProfile } from '../data/mockData';
 
 const DashboardLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user] = useState(() => {
+  const navigate = useNavigate();
+
+  const getStoredUser = () => {
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    if (storedUser && storedUser !== 'undefined' && storedUser !== 'null') {
       try {
         return JSON.parse(storedUser);
       } catch {
@@ -15,8 +17,9 @@ const DashboardLayout = () => {
       }
     }
     return volunteerProfile;
-  });
-  const navigate = useNavigate();
+  };
+
+  const user = getStoredUser();
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -24,12 +27,31 @@ const DashboardLayout = () => {
     navigate('/login');
   };
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Events', path: '/events' },
-    { name: 'Feedback', path: '/feedback' },
-    { name: 'Profile', path: '/profile' },
-  ];
+  const role = user?.role ? user.role.toLowerCase() : 'volunteer';
+
+  const navItems = role === 'admin'
+    ? [
+        { name: 'Dashboard', path: '/dashboard' },
+        { name: 'Events', path: '/events' },
+        { name: 'Insights', path: '/insights' },
+        { name: 'Reports', path: '/reports' },
+        { name: 'Users', path: '/users' },
+        { name: 'Profile', path: '/profile' },
+      ]
+    : role === 'spoc' || role === 'corporate'
+    ? [
+        { name: 'Dashboard', path: '/dashboard' },
+        { name: 'Events', path: '/events' },
+        { name: 'Feedback', path: '/feedback' },
+        { name: 'Reports', path: '/reports' },
+        { name: 'Profile', path: '/profile' },
+      ]
+    : [
+        { name: 'Dashboard', path: '/dashboard' },
+        { name: 'Events', path: '/events' },
+        { name: 'Feedback', path: '/feedback' },
+        { name: 'Profile', path: '/profile' },
+      ];
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">

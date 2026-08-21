@@ -5,26 +5,15 @@ import { User, Mail, Phone, MapPin, Building, Edit2, Shield, CalendarDays, Clock
 const ProfilePage = () => {
   const { user } = useOutletContext();
 
-  if (user?.role !== 'volunteer') {
-    return (
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100">
-          <h1 className="text-3xl font-bold text-slate-900 mb-4">Profile</h1>
-          <p className="text-lg text-slate-600">Manage your profile information.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Mock extended profile data matching the requested fields
+  // Extended profile data with logged in user details
   const profileDetails = {
-    name: user?.name || "John Doe",
-    email: user?.email || "john.doe@example.com",
-    phone: "+91 98765 43210",
+    name: user?.name || "User",
+    email: user?.email || "user@example.com",
+    phone: user?.phone || "+91 98765 43210",
     location: "Mumbai, Maharashtra",
-    organization: "KJ Somaiya College of Engineering",
+    organization: user?.organization || "Mastercard / SevaSahayog",
     joinDate: "January 2026",
-    role: "VOLUNTEER"
+    role: (user?.role || "VOLUNTEER").toUpperCase()
   };
 
   return (

@@ -43,9 +43,21 @@ const LoginForm = () => {
       
       const response = await authApi.login(loginPayload);
       
-      // Store token and user
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      // Extract auth payload from backend ApiResponse ({ data: { token, user } })
+      const authData = response?.data || response;
+      const token = authData?.token || response?.token;
+      const user = authData?.user || response?.user || {
+        email,
+        role: role || 'volunteer',
+        name: email.split('@')[0],
+      };
+      
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      }
       
       // Navigate to dashboard
       navigate('/dashboard');

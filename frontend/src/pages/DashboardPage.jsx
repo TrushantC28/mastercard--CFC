@@ -76,19 +76,101 @@ const StatusBadge = ({ status }) => {
 
 const DashboardPage = () => {
   const { user } = useOutletContext();
+  const role = user?.role ? user.role.toLowerCase() : "volunteer";
 
-  if (user?.role !== "volunteer") {
+  if (role === "admin") {
     return (
-      <div className="w-full min-h-[70vh] flex items-center justify-center px-6">
-        <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-200 text-center max-w-xl w-full">
-          <h1 className="text-3xl font-extrabold text-slate-900 mb-3">
-            Dashboard
-          </h1>
+      <div className="w-full font-sans pb-10">
+        <section className="w-full rounded-3xl bg-gradient-to-r from-[#173b59] to-[#245c7a] text-white px-6 sm:px-8 lg:px-10 py-8 shadow-md mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            <div>
+              <p className="text-sm font-semibold text-blue-100 mb-2">
+                Administrator / NGO Portal
+              </p>
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+                Welcome, <span className="text-amber-400">{user?.name || "Admin"}</span>
+              </h1>
+              <p className="mt-2 text-blue-100 text-sm sm:text-base max-w-2xl">
+                Manage activities, review volunteer proposals, view impact analytics, and manage portal users.
+              </p>
+            </div>
+            <Link
+              to="/events"
+              className="inline-flex items-center justify-center bg-amber-400 hover:bg-amber-300 text-[#173b59] font-bold px-6 py-3 rounded-xl transition-colors whitespace-nowrap"
+            >
+              Manage Activities →
+            </Link>
+          </div>
+        </section>
 
-          <p className="text-slate-600">
-            Welcome to the SevaSahayog Portal.
-          </p>
-        </div>
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Link to="/events" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">📅</span>
+            <h3 className="text-xl font-bold text-slate-800">Activities</h3>
+            <p className="text-sm text-slate-500 mt-1">Create and manage events</p>
+          </Link>
+          <Link to="/insights" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">📊</span>
+            <h3 className="text-xl font-bold text-slate-800">Insights</h3>
+            <p className="text-sm text-slate-500 mt-1">View participation analytics</p>
+          </Link>
+          <Link to="/reports" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">📑</span>
+            <h3 className="text-xl font-bold text-slate-800">Reports</h3>
+            <p className="text-sm text-slate-500 mt-1">Generate impact summaries</p>
+          </Link>
+          <Link to="/users" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">👥</span>
+            <h3 className="text-xl font-bold text-slate-800">Users</h3>
+            <p className="text-sm text-slate-500 mt-1">Manage volunteers and SPOCs</p>
+          </Link>
+        </section>
+      </div>
+    );
+  }
+
+  if (role === "spoc" || role === "corporate") {
+    return (
+      <div className="w-full font-sans pb-10">
+        <section className="w-full rounded-3xl bg-gradient-to-r from-[#173b59] to-[#245c7a] text-white px-6 sm:px-8 lg:px-10 py-8 shadow-md mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            <div>
+              <p className="text-sm font-semibold text-blue-100 mb-2">
+                Corporate SPOC Portal
+              </p>
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+                Welcome, <span className="text-amber-400">{user?.name || "Corporate Partner"}</span>
+              </h1>
+              <p className="mt-2 text-blue-100 text-sm sm:text-base max-w-2xl">
+                Track your organization's CSR volunteering drives, employee participation, and impact reports.
+              </p>
+            </div>
+            <Link
+              to="/events"
+              className="inline-flex items-center justify-center bg-amber-400 hover:bg-amber-300 text-[#173b59] font-bold px-6 py-3 rounded-xl transition-colors whitespace-nowrap"
+            >
+              Browse Events →
+            </Link>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+          <Link to="/events" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">📅</span>
+            <h3 className="text-xl font-bold text-slate-800">CSR Activities</h3>
+            <p className="text-sm text-slate-500 mt-1">View active volunteering drives</p>
+          </Link>
+          <Link to="/feedback" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">💬</span>
+            <h3 className="text-xl font-bold text-slate-800">Feedback</h3>
+            <p className="text-sm text-slate-500 mt-1">Review volunteer feedback</p>
+          </Link>
+          <Link to="/reports" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">📊</span>
+            <h3 className="text-xl font-bold text-slate-800">Impact Reports</h3>
+            <p className="text-sm text-slate-500 mt-1">Download CSR reports</p>
+          </Link>
+        </section>
       </div>
     );
   }

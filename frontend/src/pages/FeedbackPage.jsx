@@ -1,25 +1,9 @@
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { recentFeedback, volunteerStats } from '../data/mockData';
 import { Star, MessageSquare, Plus, ChevronRight } from 'lucide-react';
 
 const FeedbackPage = () => {
-  const { user } = useOutletContext();
 
-  if (user?.role !== 'volunteer') {
-    return (
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Feedback</h1>
-            <p className="text-lg text-slate-600">View and manage volunteering feedback.</p>
-          </div>
-          <Link to="/feedback/new" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-            Share Feedback
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 font-sans pb-12">
