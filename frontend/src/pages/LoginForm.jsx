@@ -14,7 +14,6 @@ const LoginForm = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Determine display titles and registration based on role
   let roleTitle = 'Login';
   let showRegister = true;
   let isCorporate = false;
@@ -37,19 +36,12 @@ const LoginForm = () => {
     setIsLoading(true);
 
     try {
-      // Send email, password, and the requested role
       const loginPayload = { email, password, role };
       if (isCorporate) {
-        loginPayload.companyName = companyName; // Just in case it's useful for future backend checks
+        loginPayload.companyName = companyName;
       }
       
-      const response = await authApi.login(loginPayload);
-      
-      // Store token and user
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      
-      // Navigate to dashboard
+      await authApi.login(loginPayload);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Failed to login');
@@ -63,7 +55,7 @@ const LoginForm = () => {
       <Navbar />
 
       <main className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-lg min-h-[600px] flex flex-col justify-center bg-white border border-slate-100 p-8 sm:p-12 rounded-2xl shadow-xl relative overflow-hidden">
+        <div className="w-full max-w-lg min-h-[550px] flex flex-col justify-center bg-white border border-slate-100 p-8 sm:p-12 rounded-2xl shadow-xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-amber-400"></div>
           
           <h2 className="text-3xl sm:text-4xl font-extrabold mb-8 text-center text-slate-800">{roleTitle}</h2>
