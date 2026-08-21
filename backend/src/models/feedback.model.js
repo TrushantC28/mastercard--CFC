@@ -6,6 +6,9 @@ const feedbackThemeTagSchema = new mongoose.Schema({
         ref: "FeedbackTheme",
         required: true,
     },
+    themeName: {
+        type: String,
+    },
     sentiment: {
         type: String,
         enum: ["positive", "neutral", "negative"],
