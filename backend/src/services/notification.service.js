@@ -144,3 +144,39 @@ export const notifyFeedbackPrompt = async ({ volunteerEmail, activityTitle, acti
         html,
     });
 };
+
+/**
+ * Alerts SevaSahayog Admins regarding urgent feedback or low ratings submitted by a volunteer.
+ * 
+ * @param {Object} params
+ * @param {string} params.adminEmail
+ * @param {string} params.activityTitle
+ * @param {string} params.volunteerName
+ * @param {number} params.overallRating
+ * @param {string} params.comments
+ */
+export const notifyUrgentFeedbackAlert = async ({ adminEmail, activityTitle, volunteerName, overallRating, comments }) => {
+    if (!adminEmail) return { success: false, reason: "No adminEmail provided" };
+
+    const subject = `🚨 [URGENT FEEDBACK ALERT] Rating ${overallRating}/5 on "${activityTitle}"`;
+    const text = `URGENT ALERT:\nVolunteer: ${volunteerName || "Anonymous"}\nActivity: ${activityTitle}\nRating: ${overallRating}/5\nComments: ${comments || "None"}`;
+    const html = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px;">
+            <h2>🚨 Urgent Feedback Alert</h2>
+            <p><strong>Activity:</strong> ${activityTitle}</p>
+            <p><strong>Volunteer:</strong> ${volunteerName || "Volunteer"}</p>
+            <p><strong>Rating:</strong> ${overallRating} / 5</p>
+            <p><strong>Comments:</strong> "${comments || "No comments provided."}"</p>
+            <hr />
+            <p style="font-size: 12px;">SevaSahayog Volunteer Experience Platform</p>
+        </div>
+    `;
+
+    return await safeSendMail({
+        to: adminEmail,
+        subject,
+        text,
+        html,
+    });
+};
+

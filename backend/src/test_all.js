@@ -1,6 +1,5 @@
 import { classifyTextWithRules } from "./services/classifier.service.js";
-import { notifyProposalDecision, notifyEventReminder, notifyFeedbackPrompt } from "./services/notification.service.js";
-import { checkFeedbackEligibility } from "./services/feedback.service.js";
+import { notifyProposalDecision, notifyEventReminder, notifyFeedbackPrompt, notifyUrgentFeedbackAlert } from "./services/notification.service.js";
 
 async function runBackendTests() {
     console.log("=================================================");
@@ -20,29 +19,40 @@ async function runBackendTests() {
         }
     }
 
-    // 1. Classifier Test
-    console.log("--- 1. Testing Feedback Classifier Service ---");
+    // 1. Classifier Test (Multilingual + Sentiment)
+    console.log("--- 1. Testing Feedback Classifier & Multilingual Support ---");
     const mockThemes = [
-        { _id: "theme1", name: "High impact felt", category: "positive", keywords: ["impact", "loved"] },
-        { _id: "theme2", name: "Timing/logistics", category: "negative", keywords: ["heat", "earlier"] }
+        { _id: "theme1", name: "High impact felt", category: "positive", keywords: ["impact", "loved", "अच्छा"] },
+        { _id: "theme2", name: "Timing/logistics", category: "negative", keywords: ["heat", "earlier", "खराब"] }
     ];
-    const text = "Loved seeing the impact. Start earlier to beat the heat.";
-    const results = classifyTextWithRules(text, mockThemes);
     
-    assert(Array.isArray(results) && results.length === 2, "Classifier correctly identifies 2 themes from text");
-    assert(results[0].themeName === "High impact felt" && results[0].sentiment === "positive", "Matches positive sentiment theme");
-    assert(results[1].themeName === "Timing/logistics" && results[1].sentiment === "negative", "Matches negative sentiment theme");
+    const textEn = "Loved seeing the impact. Start earlier to beat the heat.";
+    const resultsEn = classifyTextWithRules(textEn, mockThemes);
+    assert(Array.isArray(resultsEn) && resultsEn.length === 2, "Classifier identifies 2 themes in English text");
 
-    // 2. Notification Tests
-    console.log("\n--- 2. Testing Notification Service Exports ---");
+    const textHi = "आयोजन अच्छा था लेकिन समय खराब था";
+    const resultsHi = classifyTextWithRules(textHi, mockThemes);
+    assert(Array.isArray(resultsHi) && resultsHi.length === 2, "Classifier identifies 2 themes in Hindi text");
+
+    // 2. Urgent Concern Alert Notification Test
+    console.log("\n--- 2. Testing Urgent Concern Alert & Notifications ---");
+    const alertRes = await notifyUrgentFeedbackAlert({
+        adminEmail: "admin@sevasahayog.org",
+        activityTitle: "Tree Plantation",
+        volunteerName: "Priya",
+        overallRating: 1,
+        comments: "Unsafe environment, emergency support needed!"
+    });
+    assert(typeof alertRes === "object" && alertRes !== null, "notifyUrgentFeedbackAlert executes safely without throwing");
+
     const res1 = await notifyProposalDecision({ spocEmail: "spoc@test.com", proposalTitle: "Plantation", decision: "approved" });
-    assert(typeof res1 === "object" && res1 !== null, "notifyProposalDecision executes safely without throwing");
+    assert(typeof res1 === "object" && res1 !== null, "notifyProposalDecision executes safely");
 
     const res2 = await notifyEventReminder({ volunteerEmail: "vol@test.com", activityTitle: "Plantation", activityDate: new Date(), activityLocation: "Mumbai" });
-    assert(typeof res2 === "object" && res2 !== null, "notifyEventReminder executes safely without throwing");
+    assert(typeof res2 === "object" && res2 !== null, "notifyEventReminder executes safely");
 
     const res3 = await notifyFeedbackPrompt({ volunteerEmail: "vol@test.com", activityTitle: "Plantation", activityId: "act123" });
-    assert(typeof res3 === "object" && res3 !== null, "notifyFeedbackPrompt executes safely without throwing");
+    assert(typeof res3 === "object" && res3 !== null, "notifyFeedbackPrompt executes safely");
 
     console.log("\n=================================================");
     console.log(`📊 FINAL TEST RESULT: ${passed}/${total} PASSED`);

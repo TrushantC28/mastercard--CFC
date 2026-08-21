@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { submitFeedback, getFeedback } from "../controllers/feedback.controller.js";
+import { exportFeedbackCSV } from "../controllers/feedbackExport.controller.js";
 import { requireAuth, requireRole } from "../middleware/auth.middleware.js";
 
 const router = Router();
@@ -13,6 +14,18 @@ router.post(
     requireAuth,
     requireRole("volunteer"),
     submitFeedback
+);
+
+/**
+ * GET /feedback/export
+ * Access: admin or spoc
+ * NOTE: Must be defined before /feedback to prevent route pattern collision if parameterized
+ */
+router.get(
+    "/feedback/export",
+    requireAuth,
+    requireRole("admin", "spoc"),
+    exportFeedbackCSV
 );
 
 /**

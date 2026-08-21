@@ -1,11 +1,15 @@
 import Feedback from "../models/feedback.model.js";
 import FeedbackTheme from "../models/feedbackTheme.model.js";
+import { notifyUrgentFeedbackAlert } from "./notification.service.js";
+
+const URGENT_KEYWORDS = [
+    "urgent", "emergency", "injury", "safety", "poisoning", "terrible", 
+    "horrible", "kharaab", "खराब", "आपातकाल", "दुर्घटना", "असुरक्षित", "कचरा", "त्रास"
+];
 
 /**
  * Keyword / Rules-based matching function.
- * Evaluates combined text against theme keyword rules.
- * Modular design: This function signature (combinedText, themesList) can easily be swapped 
- * or wrapped with an LLM call (e.g. OpenAI / Gemini) in the future.
+ * Evaluates combined text against theme keyword rules, supporting multilingual tokens (English, Hindi, Marathi).
  * 
  * @param {string} combinedText - Joined comments and suggestions text.
  * @param {Array} themesList - Array of FeedbackTheme documents with keywords.
@@ -16,18 +20,15 @@ export const classifyTextWithRules = (combinedText, themesList) => {
     const matchedThemes = [];
 
     for (const theme of themesList) {
-        // Collect keywords from theme.keywords or split theme.name into word tokens as fallback
         const keywords = Array.isArray(theme.keywords) && theme.keywords.length > 0
             ? theme.keywords
             : theme.name.toLowerCase().split(/\s+/).filter(w => w.length > 2);
 
-        // Check if any keyword matches the text
         const isMatched = keywords.some((keyword) =>
             textLower.includes(keyword.toLowerCase().trim())
         );
 
         if (isMatched) {
-            // Determine sentiment: map category "urgent" or "neutral" or fallback to category/positive
             let sentiment = "positive";
             if (theme.category === "negative") {
                 sentiment = "negative";
@@ -53,28 +54,49 @@ export const classifyTextWithRules = (combinedText, themesList) => {
 
 /**
  * Asynchronous, non-blocking classification runner.
- * Fetches feedback doc & themes, runs matching, and updates feedback doc.
- * Call this without 'await' in controllers so it doesn't block HTTP responses.
+ * Analyzes text, extracts themes, detects urgent concerns (rating <= 2 or urgent keywords),
+ * updates feedback doc, and sends real-time admin alert if urgent.
  * 
  * @param {string|ObjectId} feedbackId 
  */
 export const classifyFeedbackAsync = async (feedbackId) => {
     try {
-        const feedback = await Feedback.findById(feedbackId);
+        const feedback = await Feedback.findById(feedbackId)
+            .populate("activityId", "title")
+            .populate("volunteerId", "name email");
+
         if (!feedback) return;
 
         const textToAnalyze = `${feedback.comments || ""} ${feedback.suggestions || ""}`.trim();
-        if (!textToAnalyze) return;
+        const textLower = textToAnalyze.toLowerCase();
 
-        // Fetch registered themes from DB
+        // 1. Check for urgent concern (rating <= 2 OR urgent keyword present)
+        const hasUrgentKeyword = URGENT_KEYWORDS.some(kw => textLower.includes(kw));
+        const isUrgent = feedback.overallRating <= 2 || hasUrgentKeyword;
+
+        feedback.isUrgent = isUrgent;
+
+        // 2. Fetch registered themes & classify
         const themesList = await FeedbackTheme.find({}).lean();
-        if (!themesList || themesList.length === 0) return;
+        if (themesList && themesList.length > 0 && textToAnalyze) {
+            const matchedThemes = classifyTextWithRules(textToAnalyze, themesList);
+            if (matchedThemes.length > 0) {
+                feedback.themes = matchedThemes;
+            }
+        }
 
-        const matchedThemes = classifyTextWithRules(textToAnalyze, themesList);
+        await feedback.save();
 
-        if (matchedThemes.length > 0) {
-            feedback.themes = matchedThemes;
-            await feedback.save();
+        // 3. Trigger alert notification if urgent concern detected
+        if (isUrgent) {
+            const adminEmail = process.env.ADMIN_ALERT_EMAIL || "admin@sevasahayog.org";
+            await notifyUrgentFeedbackAlert({
+                adminEmail,
+                activityTitle: feedback.activityId?.title || "Volunteering Activity",
+                volunteerName: feedback.volunteerId?.name || "Volunteer",
+                overallRating: feedback.overallRating,
+                comments: feedback.comments,
+            });
         }
     } catch (err) {
         console.error(`[Async Classification] Error processing feedback ${feedbackId}:`, err.message);

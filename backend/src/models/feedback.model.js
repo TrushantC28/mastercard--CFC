@@ -67,6 +67,10 @@ const feedbackSchema = new mongoose.Schema(
         themes: {
             type: [feedbackThemeTagSchema],
         },
+        isUrgent: {
+            type: Boolean,
+            default: false,
+        },
         submittedAt: {
             type: Date,
             default: Date.now,
