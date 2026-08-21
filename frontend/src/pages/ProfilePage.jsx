@@ -1,4 +1,3 @@
-import React from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { volunteerStats } from '../data/mockData';
 import { User, Mail, Phone, MapPin, Building, Edit2, Shield, CalendarDays, Clock, Trophy, Star } from 'lucide-react';

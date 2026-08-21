@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { upcomingActivities } from '../data/mockData';
 import { Search, MapPin, CalendarDays, Filter } from 'lucide-react';

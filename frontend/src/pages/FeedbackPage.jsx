@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { recentFeedback, volunteerStats } from '../data/mockData';
 import { Star, MessageSquare, Plus, ChevronRight } from 'lucide-react';

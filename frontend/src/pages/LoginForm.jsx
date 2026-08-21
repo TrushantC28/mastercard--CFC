@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
@@ -27,8 +27,6 @@ const LoginForm = () => {
   } else if (role === 'corporate') {
     roleTitle = 'Corporate SPOC Login';
     isCorporate = true;
-  } else {
-    roleTitle = 'Login';
   }
 
   const handleSubmit = async (e) => {

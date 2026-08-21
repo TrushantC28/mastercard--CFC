@@ -1,26 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { volunteerProfile } from '../data/mockData';
 
 const DashboardLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Check localStorage, if not present use mock profile for volunteer
+  const [user] = useState(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        setUser(volunteerProfile);
+        return JSON.parse(storedUser);
+      } catch {
+        return volunteerProfile;
       }
-    } else {
-      setUser(volunteerProfile); // Default to volunteer mock data if not logged in
     }
-  }, []);
+    return volunteerProfile;
+  });
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem('user');

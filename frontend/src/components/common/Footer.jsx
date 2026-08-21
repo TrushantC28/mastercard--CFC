@@ -1,4 +1,3 @@
-import React from 'react';
 import { Mail, Globe, MessageCircle, Share2 } from 'lucide-react';
 import './Footer.css';
 

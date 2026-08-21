@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { upcomingActivities } from '../data/mockData';
 import { Star, CheckCircle2, ArrowLeft } from 'lucide-react';

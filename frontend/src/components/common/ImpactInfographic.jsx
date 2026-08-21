@@ -1,4 +1,3 @@
-import React from 'react';
 import { BookOpen, Users, TreeDeciduous } from 'lucide-react';
 import './ImpactInfographic.css';
 
