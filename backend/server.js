@@ -1,6 +1,8 @@
 import "dotenv/config";
 import connectDB from "./src/db/index.js";
 
+require('dotenv').config()
+
 import "./src/models/User.js";
 import "./src/models/RefreshToken.js";
 import "./src/models/DonorProfile.js";
