@@ -3,6 +3,10 @@ import bcrypt from "bcrypt";
 
 const userSchema = new mongoose.Schema(
     {
+        name: {
+            type: String,
+            required: true,
+        },
         email: {
             type: String,
             required: true,
@@ -49,6 +53,11 @@ const userSchema = new mongoose.Schema(
             type: String,
             enum: ["active", "inactive"],
             default: "active",
+        },
+        corporatePartnerId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "CorporatePartner",
+            default: null,
         },
         refreshToken: {
             type: String,
