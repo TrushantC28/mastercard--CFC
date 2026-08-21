@@ -2,37 +2,108 @@
 
 Covers every endpoint across all four backend services (Auth, Activity & Proposal, Registration & Attendance, Feedback & Classification). Each entry has the method, path, who can call it, a dummy request body, and dummy success/error responses using the exact field names and enum values from the schema — so the three frontend devs can build UI against fixed shapes now and swap in the real backend later without changing any field names.
 
-**Conventions used throughout**
-- All IDs are dummy 24-char hex strings shaped like real MongoDB ObjectIds (e.g. `"66aa1111bb2222cc3333dd44"`) — treat them as opaque strings, not real records.
-- Every protected endpoint expects `Authorization: Bearer <token>` — a missing/invalid token always returns the same 401 shape shown once at the top and not repeated per endpoint.
-- Every role-gated endpoint returns the same 403 shape shown once at the top and not repeated per endpoint.
-- Dates are ISO 8601 strings.
+**Conventions & Authentication**
+- **Base URL**: `/` (or `http://localhost:8000`)
+- **Header Format for Protected Endpoints**:
+  ```http
+  Authorization: Bearer <token>
+  Content-Type: application/json
+  ```
+- **JWT Payload Shape**:
+  Tokens are signed using HMAC-SHA256 (`ACCESS_TOKEN_SECRET`) with an expiry (default `1d` / 24 hours):
+  ```json
+  {
+    "_id": "66aa1111bb2222cc333301",
+    "userId": "66aa1111bb2222cc333301",
+    "role": "volunteer",
+    "corporatePartnerId": null,
+    "iat": 1755760000,
+    "exp": 1755846400
+  }
+  ```
+- **IDs & Dates**:
+  - MongoDB ObjectIds are 24-character hexadecimal strings (e.g., `"66aa1111bb2222cc333301"`).
+  - Dates are standard ISO 8601 strings (e.g., `"2026-08-21T09:00:00.000Z"`).
 
-### Shared error shapes
+### Standard Error Shapes
 
 ```json
-// 401 — no/invalid/expired token
+// 400 — Validation / Input Error
 {
-  "error": "unauthorized",
-  "message": "Authentication required."
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Role must be one of: volunteer, admin, spoc"
+  }
 }
 ```
 
 ```json
-// 403 — valid token, wrong role
+// 400 — Validation Failure with Field Details
 {
-  "error": "forbidden",
-  "message": "You do not have permission to perform this action."
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid input.",
+    "fields": {
+      "email": "Must be a valid email address.",
+      "password": "Must be at least 8 characters."
+    }
+  }
 }
 ```
 
 ```json
-// 400 — validation failure (shape is the same across all endpoints; "fields" varies)
+// 400 / 409 — Duplicate Email Registration
 {
-  "error": "validation_error",
-  "message": "One or more fields are invalid.",
-  "fields": {
-    "email": "Must be a valid email address."
+  "success": false,
+  "error": {
+    "code": "EMAIL_EXISTS",
+    "message": "Email already registered"
+  }
+}
+```
+
+```json
+// 401 — Missing, Invalid, or Expired Token / Bad Credentials
+{
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authentication required."
+  }
+}
+```
+
+```json
+// 403 — Forbidden (User authenticated, but role insufficient)
+{
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "You do not have permission to perform this action."
+  }
+}
+```
+
+```json
+// 404 — Resource Not Found
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "User not found"
+  }
+}
+```
+
+```json
+// 429 — Rate Limit Exceeded
+{
+  "success": false,
+  "error": {
+    "code": "TOO_MANY_REQUESTS",
+    "message": "Too many requests, please try again later."
   }
 }
 ```
@@ -42,9 +113,12 @@ Covers every endpoint across all four backend services (Auth, Activity & Proposa
 ## 1. Auth & User service
 
 ### `POST /auth/register`
-**Access:** public
+Creates a new user in the platform, securely hashes the password with bcrypt, and returns the sanitized user object without `passwordHash` or `refreshToken`.
 
-Request
+- **Access:** Public
+- **Rate Limit:** 20 requests per 15-minute window
+
+#### Request Body
 ```json
 {
   "email": "priya.volunteer@example.com",
@@ -56,34 +130,77 @@ Request
 }
 ```
 
-Response `201`
+| Field | Type | Required? | Description |
+| :--- | :--- | :--- | :--- |
+| `email` | String | Yes | Unique user email address (automatically lowercased and trimmed). |
+| `password` | String | Yes | Plaintext password (hashed before persisting). |
+| `name` | String | No | Full name of the user. |
+| `phone` | String | No | Contact phone number. |
+| `role` | String | Yes | Enum: `"volunteer"`, `"admin"`, `"spoc"`. |
+| `corporatePartnerId` | String / null | Conditional | Required for `spoc`, optional for `volunteer`, must be absent/null for `admin`. |
+
+#### Success Response `201 Created`
 ```json
 {
-  "id": "66aa1111bb2222cc333301",
-  "email": "priya.volunteer@example.com",
-  "name": "Priya Sharma",
-  "phone": "9876543210",
-  "role": "volunteer",
-  "corporatePartnerId": null,
-  "status": "active",
-  "createdAt": "2026-08-21T09:00:00.000Z"
+  "statusCode": 201,
+  "data": {
+    "id": "66aa1111bb2222cc333301",
+    "_id": "66aa1111bb2222cc333301",
+    "email": "priya.volunteer@example.com",
+    "name": "Priya Sharma",
+    "phone": "9876543210",
+    "role": "volunteer",
+    "corporatePartnerId": null,
+    "status": "active",
+    "createdAt": "2026-08-21T09:00:00.000Z",
+    "updatedAt": "2026-08-21T09:00:00.000Z"
+  },
+  "message": "User registered successfully",
+  "success": true
 }
 ```
 
-Response `409` (duplicate email)
-```json
-{
-  "error": "conflict",
-  "message": "An account with this email already exists."
-}
-```
+#### Error Responses
+- **`400 Bad Request`** (Duplicate Email):
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "EMAIL_EXISTS",
+      "message": "Email already registered"
+    }
+  }
+  ```
+- **`400 Bad Request`** (Missing required fields or invalid role / SPOC partner mismatch):
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "BAD_REQUEST",
+      "message": "corporatePartnerId is required for spoc role"
+    }
+  }
+  ```
+- **`429 Too Many Requests`**:
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "TOO_MANY_REQUESTS",
+      "message": "Too many requests, please try again later."
+    }
+  }
+  ```
 
 ---
 
 ### `POST /auth/login`
-**Access:** public
+Authenticates a user via email and password using `comparePassword`. On success, issues a signed JWT token and returns user details.
 
-Request
+- **Access:** Public
+- **Rate Limit:** 20 requests per 15-minute window
+
+#### Request Body
 ```json
 {
   "email": "priya.volunteer@example.com",
@@ -91,89 +208,215 @@ Request
 }
 ```
 
-Response `200`
+#### Success Response `200 OK`
 ```json
 {
-  "token": "dummy.jwt.token.for.frontend.mocking",
-  "user": {
-    "id": "66aa1111bb2222cc333301",
-    "email": "priya.volunteer@example.com",
-    "name": "Priya Sharma",
-    "role": "volunteer",
-    "corporatePartnerId": null
-  }
+  "statusCode": 200,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfdXNlcklkIjoiNjZhYTExMTFiYjIyMjJjYzMzMzMwMSIsInJvbGUiOiJ2b2x1bnRlZXIiLCJjb3Jwb3JhdGVQYXJ0bmVySWQiOm51bGwsImlhdCI6MTc1NTc2MDAwMCwiZXhwIjoxNzU1ODQ2NDAwfQ.dummy_signature",
+    "user": {
+      "id": "66aa1111bb2222cc333301",
+      "_id": "66aa1111bb2222cc333301",
+      "email": "priya.volunteer@example.com",
+      "name": "Priya Sharma",
+      "phone": "9876543210",
+      "role": "volunteer",
+      "corporatePartnerId": null,
+      "status": "active"
+    }
+  },
+  "message": "User logged in successfully",
+  "success": true
 }
 ```
 
-Response `401` (bad credentials — deliberately generic, doesn't reveal which field was wrong)
-```json
-{
-  "error": "unauthorized",
-  "message": "Invalid email or password."
-}
-```
+#### Error Responses
+- **`400 Bad Request`** (Missing fields):
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "BAD_REQUEST",
+      "message": "Email and password are required"
+    }
+  }
+  ```
+- **`401 Unauthorized`** (Invalid credentials — does not leak email existence):
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "UNAUTHORIZED",
+      "message": "Invalid email or password"
+    }
+  }
+  ```
+- **`429 Too Many Requests`**:
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "TOO_MANY_REQUESTS",
+      "message": "Too many requests, please try again later."
+    }
+  }
+  ```
 
 ---
 
 ### `POST /auth/logout`
-**Access:** any authenticated user
+Logs out the currently authenticated user and clears session authentication cookies.
 
-Response `200`
+- **Access:** Authenticated user (`requireAuth`)
+- **Headers:** `Authorization: Bearer <token>`
+
+#### Success Response `200 OK`
 ```json
 {
-  "message": "Logged out successfully."
+  "statusCode": 200,
+  "data": {},
+  "message": "Logged out successfully.",
+  "success": true
 }
 ```
+
+#### Error Responses
+- **`401 Unauthorized`** (Missing, expired, or invalid token):
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "UNAUTHORIZED",
+      "message": "Authentication required."
+    }
+  }
+  ```
 
 ---
 
 ### `GET /users/me`
-**Access:** any authenticated user
+Fetches the profile of the currently authenticated user from the token identity, omitting sensitive credentials.
 
-Response `200` (example: a SPOC user)
+- **Access:** Authenticated user (`requireAuth`)
+- **Headers:** `Authorization: Bearer <token>`
+
+#### Success Response `200 OK`
 ```json
 {
-  "id": "66aa1111bb2222cc333302",
-  "email": "spoc@acmecorp.com",
-  "name": "Rahul Mehta",
-  "phone": "9123456780",
-  "role": "spoc",
-  "corporatePartnerId": "66aa1111bb2222cc333310",
-  "status": "active"
+  "statusCode": 200,
+  "data": {
+    "id": "66aa1111bb2222cc333302",
+    "_id": "66aa1111bb2222cc333302",
+    "email": "spoc@acmecorp.com",
+    "name": "Rahul Mehta",
+    "phone": "9123456780",
+    "role": "spoc",
+    "corporatePartnerId": "66aa1111bb2222cc333310",
+    "status": "active",
+    "createdAt": "2026-08-21T09:00:00.000Z",
+    "updatedAt": "2026-08-21T09:00:00.000Z"
+  },
+  "message": "User profile fetched successfully",
+  "success": true
 }
 ```
+
+#### Error Responses
+- **`401 Unauthorized`** (Missing or invalid token):
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "UNAUTHORIZED",
+      "message": "Authentication required."
+    }
+  }
+  ```
+- **`404 Not Found`** (User record no longer exists):
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "User not found"
+    }
+  }
+  ```
 
 ---
 
 ### `GET /users`
-**Access:** admin only. Query params: `role`, `corporatePartnerId` (both optional filters), `page`, `limit`.
+Retrieves a paginated list of user accounts with optional filtering by `role` and `corporatePartnerId`. All sensitive password hashes and refresh tokens are excluded.
 
-Response `200`
+- **Access:** Admin only (`requireAuth`, `requireRole('admin')`)
+- **Headers:** `Authorization: Bearer <token>`
+- **Query Parameters:**
+  - `role` (optional): Filter by role (`"volunteer"`, `"admin"`, `"spoc"`).
+  - `corporatePartnerId` (optional): Filter by 24-character corporate partner ID.
+  - `page` (optional): Page number (integer, default `1`).
+  - `limit` (optional): Items per page (integer, default `20`, max `100`).
+
+#### Success Response `200 OK`
 ```json
 {
-  "users": [
-    {
-      "id": "66aa1111bb2222cc333301",
-      "email": "priya.volunteer@example.com",
-      "name": "Priya Sharma",
-      "role": "volunteer",
-      "corporatePartnerId": null,
-      "status": "active"
-    },
-    {
-      "id": "66aa1111bb2222cc333302",
-      "email": "spoc@acmecorp.com",
-      "name": "Rahul Mehta",
-      "role": "spoc",
-      "corporatePartnerId": "66aa1111bb2222cc333310",
-      "status": "active"
-    }
-  ],
-  "page": 1,
-  "limit": 20,
-  "total": 2
+  "statusCode": 200,
+  "data": {
+    "users": [
+      {
+        "id": "66aa1111bb2222cc333301",
+        "_id": "66aa1111bb2222cc333301",
+        "email": "priya.volunteer@example.com",
+        "name": "Priya Sharma",
+        "phone": "9876543210",
+        "role": "volunteer",
+        "corporatePartnerId": null,
+        "status": "active",
+        "createdAt": "2026-08-21T09:00:00.000Z",
+        "updatedAt": "2026-08-21T09:00:00.000Z"
+      },
+      {
+        "id": "66aa1111bb2222cc333302",
+        "_id": "66aa1111bb2222cc333302",
+        "email": "spoc@acmecorp.com",
+        "name": "Rahul Mehta",
+        "phone": "9123456780",
+        "role": "spoc",
+        "corporatePartnerId": "66aa1111bb2222cc333310",
+        "status": "active",
+        "createdAt": "2026-08-21T09:00:00.000Z",
+        "updatedAt": "2026-08-21T09:00:00.000Z"
+      }
+    ],
+    "page": 1,
+    "limit": 20,
+    "total": 2
+  },
+  "message": "Users fetched successfully",
+  "success": true
 }
 ```
+
+#### Error Responses
+- **`401 Unauthorized`** (Unauthenticated or invalid/expired token):
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "UNAUTHORIZED",
+      "message": "Authentication required."
+    }
+  }
+  ```
+- **`403 Forbidden`** (Non-admin user attempting to access):
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "FORBIDDEN",
+      "message": "You do not have permission to perform this action."
+    }
+  }
+  ```
 
 ---
 

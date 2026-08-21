@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const userSchema = new mongoose.Schema(
     {
@@ -13,6 +14,14 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: true,
             select: false,
+        },
+        name: {
+            type: String,
+            trim: true,
+        },
+        phone: {
+            type: String,
+            trim: true,
         },
         role: {
             type: String,
@@ -36,6 +45,11 @@ const userSchema = new mongoose.Schema(
                 message: "corporatePartnerId is required for spoc, optional for volunteer, and must be absent for admin.",
             },
         },
+        status: {
+            type: String,
+            enum: ["active", "inactive"],
+            default: "active",
+        },
         refreshToken: {
             type: String,
             select: false,
@@ -46,6 +60,36 @@ const userSchema = new mongoose.Schema(
         collection: "users",
     },
 );
+
+// Virtual for plain password handling
+userSchema.virtual("password")
+    .set(function (password) {
+        this._password = password;
+        this.passwordHash = password;
+    })
+    .get(function () {
+        return this._password;
+    });
+
+// Pre-save hook: Hashes password before saving only if passwordHash was modified
+userSchema.pre("save", async function (next) {
+    if (!this.isModified("passwordHash")) {
+        return next ? next() : undefined;
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
+
+    if (next) next();
+});
+
+// Instance method to verify password
+userSchema.methods.comparePassword = async function (candidatePassword) {
+    if (!candidatePassword || !this.passwordHash) {
+        return false;
+    }
+    return await bcrypt.compare(candidatePassword, this.passwordHash);
+};
 
 // Supports filtering and querying users by role
 userSchema.index({ role: 1 });
