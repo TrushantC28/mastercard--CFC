@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import ApiError from "../utils/ApiError.js";
 
@@ -37,6 +38,10 @@ export const registerUser = async ({
         throw new ApiError(400, "corporatePartnerId must be absent for admin role");
     }
 
+    if (corporatePartnerId && !mongoose.Types.ObjectId.isValid(corporatePartnerId)) {
+        throw new ApiError(400, "Invalid corporatePartnerId format. Must be a 24-character hex string.");
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ email: trimmedEmail });
     if (existingUser) {
@@ -66,6 +71,9 @@ export const registerUser = async ({
             const error = new ApiError(400, "Email already registered");
             error.code = "EMAIL_EXISTS";
             throw error;
+        }
+        if (err.name === "CastError") {
+            throw new ApiError(400, `Invalid format for ${err.path}: ${err.value}`);
         }
         if (err.name === "ValidationError") {
             throw new ApiError(400, err.message);
