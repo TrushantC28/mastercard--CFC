@@ -1,0 +1,169 @@
+# 🗺️ Master Implementation Plan — SevaSahayog Volunteer Experience & Feedback Platform
+
+## 🎯 Executive Overview
+The **SevaSahayog Foundation Volunteer Experience Platform** digitizes feedback collection, activity design, and corporate stakeholder reporting for ~35 monthly volunteering events.
+
+It solves the operational challenge of unstructured, verbal, and fragmented human feedback by providing:
+1. **Quick Volunteer Experience**: 1-minute guided feedback collection post-activity.
+2. **Asynchronous Text & Theme Classification**: Rule-based & multilingual text analytics extracting sentiment, themes, and urgent concerns without blocking API threads.
+3. **Multi-Tenant Scoped Reporting**: Role-based access control (RBAC) ensuring corporate SPOCs view only their own company outcomes, while Admins view cross-organization benchmarks.
+4. **Export & Real-time Alerting**: Instant CSV report downloads and automated email notifications for urgent concerns (rating $\le 2$ or safety/emergency keywords).
+
+---
+
+## 🏛️ System Architecture & 4-Backend Division
+
+```
+                      +-----------------------------------+
+                      |      Frontend React + Vite UI     |
+                      +-----------------------------------+
+                                        |
+                                  REST APIs (JWT)
+                                        |
+       +--------------------------------+--------------------------------+
+       |                                |                                |
++--------------+                +--------------+                +--------------+
+|  Backend 1   |                |  Backend 2   |                |  Backend 3   |
+| Auth & Users |                |  Activities  |                | Registration |
++--------------+                +--------------+                +--------------+
+       |                                |                                |
+       +--------------------------------+--------------------------------+
+                                        |
+                                        v
+                      +-----------------------------------+
+                      |            Backend 4              |
+                      |  Feedback, Classification Engine  |
+                      |    & Fail-Safe Notification Svc   |
+                      +-----------------------------------+
+                                        |
+                                        v
+                      +-----------------------------------+
+                      |       MongoDB Atlas Database      |
+                      | (feedback, users, activities, CP) |
+                      +-----------------------------------+
+```
+
+---
+
+## 📦 Component Implementation Breakdown
+
+### 1. User Authentication & Multi-Tenancy (Backend 1 Integration)
+- **Role Hierarchy**: `volunteer`, `spoc`, `admin`.
+- **JWT Authentication**: Tokens signed using HMAC-SHA256 containing `userId`, `role`, and `corporatePartnerId`.
+- **RBAC Middleware**: Enforces token verification via `requireAuth` and role scoping via `requireRole(...)`.
+
+---
+
+### 2. Feedback Submission Engine (`POST /activities/:id/feedback`) — Backend 4
+- **Access**: Volunteer role only.
+- **Two-Tier Eligibility Verification**:
+  1. `Activity.status === "completed"` check.
+  2. `EventRegistration.attendanceStatus === "attended"` check.
+  *Returns `403 Forbidden` if either fails.*
+- **Duplicate Guard**: Checks existing `(activityId, volunteerId)` records and MongoDB compound unique index.
+  *Returns `409 Conflict` if duplicate.*
+- **Non-Blocking Async Pipeline**: Saves basic document immediately and fires background classification without awaiting HTTP response.
+
+---
+
+### 3. Classification Engine (`classifier.service.js`) — Backend 4
+- **Multilingual Token Matching**: Extracts themes using keyword matching across English, Hindi, and Marathi terms.
+- **Sentiment Assignment**: Categorizes matched themes into `positive`, `neutral`, `negative`.
+- **Urgent Concern Detection**:
+  - Automatically flags `isUrgent = true` if `overallRating <= 2` OR text matches safety/emergency keywords (`safety`, `injury`, `poisoning`, `emergency`, `terrible`, `खराब`, `आपातकाल`, `दुर्घटना`).
+  - Calls `notifyUrgentFeedbackAlert` to notify SevaSahayog admins immediately.
+
+---
+
+### 4. Multi-Tenant Analytics & CSV Exporter — Backend 4
+- **Feedback Retrieval (`GET /feedback`)**:
+  - Admin view: Access to all records and custom filters (`activityId`, `corporatePartnerId`, `dateFrom`, `dateTo`, `minRating`, `themeId`).
+  - SPOC view: Auto-scoped strictly to `req.user.corporatePartnerId` from verified JWT.
+  - Aggregation Summary: Automatically attaches `averageOverallRating`, `totalResponses`, and `topThemes` summary object on every response.
+- **Report Exporter (`GET /feedback/export`)**:
+  - Generates downloadable CSV reports formatted for Excel containing full feedback details, joined activity/company titles, theme tags, and urgent flags.
+
+---
+
+### 5. Cross-Module Notification Service (`notification.service.js`) — Backend 4
+- Exported functions:
+  - `notifyProposalDecision`: Sends approval/rejection updates to corporate SPOCs.
+  - `notifyEventReminder`: Sends upcoming volunteering reminders to registered volunteers.
+  - `notifyFeedbackPrompt`: Invites volunteers to submit feedback post-event.
+  - `notifyUrgentFeedbackAlert`: Dispatches high-priority email alerts for urgent concerns.
+- **Fail-Safe Transporter**: Uses Nodemailer SMTP; logs errors gracefully without throwing exceptions or interrupting HTTP flows.
+
+---
+
+## 📊 Database Schemas & Indexes (`backend/src/models/`)
+
+### `Feedback` Schema (`feedback.model.js`)
+```javascript
+{
+  activityId: { type: ObjectId, ref: 'Activity', required: true },
+  volunteerId: { type: ObjectId, ref: 'User', required: true },
+  corporatePartnerId: { type: ObjectId, ref: 'CorporatePartner', required: true },
+  overallRating: { type: Number, min: 1, max: 5, required: true },
+  organizationRating: { type: Number, min: 1, max: 5 },
+  impactRating: { type: Number, min: 1, max: 5 },
+  comments: String,
+  suggestions: String,
+  language: { type: String, default: 'en' },
+  themes: [{
+    themeId: { type: ObjectId, ref: 'FeedbackTheme' },
+    themeName: String,
+    sentiment: { type: String, enum: ['positive', 'neutral', 'negative'] },
+    confidenceScore: Number
+  }],
+  isUrgent: { type: Boolean, default: false },
+  submittedAt: { type: Date, default: Date.now }
+}
+// Indexes
+{ activityId: 1, volunteerId: 1 } (Unique)
+{ corporatePartnerId: 1, submittedAt: 1 }
+{ isUrgent: 1 }
+```
+
+---
+
+## 🧪 Verification & Testing Strategy
+
+### 1. Automated Test Suite (`npm test`)
+Executes `backend/src/test_all.js` verifying:
+- English & Hindi classifier theme extraction.
+- Fail-safe notification wrapper execution.
+- Urgent concern alert dispatch.
+
+### 2. Manual HTTP API Verification
+- `POST /activities/:id/feedback`: Validates 201 Created, 403 Forbidden, 409 Conflict.
+- `GET /feedback`: Validates Admin filtering and SPOC corporate scoping.
+- `GET /feedback/export`: Validates CSV attachment streaming.
+
+---
+
+## 🚀 Deployment & Local Execution Guide
+
+### Local Development Startup
+```bash
+# Start Backend API (Port 8000)
+cd backend
+npm run dev
+
+# Start Frontend App (Port 5173)
+cd frontend
+npm run dev
+```
+
+### Environment Variables (.env)
+```ini
+PORT=8000
+MONGODB_URI=mongodb://tiwarirubi93_db_user:0fmOzN5U5sL0TnX8@ac-fmh2xaf-shard-00-00.k6cblgu.mongodb.net:27017,ac-fmh2xaf-shard-00-01.k6cblgu.mongodb.net:27017,ac-fmh2xaf-shard-00-02.k6cblgu.mongodb.net:27017/tiwarirubi93_db_user?ssl=true&authSource=admin&retryWrites=true&w=majority
+DB_NAME=tiwarirubi93_db_user
+ACCESS_TOKEN_SECRET=11bce097163ea8162f6f81e1d97f3ba554c74b1e7023d9ec90c88b3e2b7658d517f4d86144bc013615ecbf285ffdef8351d1848c922bd40fc2282b010c1dd1c8
+ACCESS_TOKEN_EXPIRY=1d
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=no-reply@sevasahayog.org
+SMTP_PASS=samplepassword
+ADMIN_ALERT_EMAIL=admin@sevasahayog.org
+```

@@ -1,4 +1,8 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  'http://localhost:8000'
+).replace(/\/+$/, '');
 
 const request = async (endpoint, options = {}) => {
   const headers = {
@@ -11,7 +15,10 @@ const request = async (endpoint, options = {}) => {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+
+  const response = await fetch(`${BASE_URL}${normalizedEndpoint}`, {
+    credentials: options.credentials || 'include',
     ...options,
     headers,
   });
@@ -19,7 +26,10 @@ const request = async (endpoint, options = {}) => {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.message || data.error?.message || data.error || 'Something went wrong');
+    const errorMessage = data?.message || data?.error?.message || data?.error || 'Something went wrong';
+    const error = new Error(errorMessage);
+    error.response = { data, status: response.status };
+    throw error;
   }
 
   return data;
@@ -31,8 +41,9 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-    const token = res.data?.token || res.token || res.data?.accessToken;
-    const user = res.data?.user || res.user;
+    const authData = res?.data || res;
+    const token = authData?.token || res?.token || authData?.accessToken;
+    const user = authData?.user || res?.user;
     if (token) localStorage.setItem('token', token);
     if (user) localStorage.setItem('user', JSON.stringify(user));
     return { token, user };
@@ -129,6 +140,7 @@ export const feedbackApi = {
     const query = new URLSearchParams(params).toString();
     const res = await fetch(`${BASE_URL}/feedback/export${query ? `?${query}` : ''}`, {
       headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include',
     });
     if (!res.ok) throw new Error('Failed to export feedback CSV');
     const blob = await res.blob();
@@ -160,4 +172,3 @@ export const aiInsightApi = {
       body: JSON.stringify(payload),
     }),
 };
-
