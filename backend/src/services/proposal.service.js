@@ -1,5 +1,7 @@
 import ActivityProposal from "../models/activityProposal.model.js";
 import Activity from "../models/activity.model.js";
+import "../models/corporatePartner.model.js";
+import "../models/User.js";
 import mongoose from "mongoose";
 import ApiError from "../utils/ApiError.js";
 
