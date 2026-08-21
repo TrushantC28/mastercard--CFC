@@ -1,4 +1,5 @@
 import Activity from "../models/activity.model.js";
+import "../models/corporatePartner.model.js";
 import ApiError from "../utils/ApiError.js";
 
 export const ACTIVITY_STATUS_TRANSITIONS = {
