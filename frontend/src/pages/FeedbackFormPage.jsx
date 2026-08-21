@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { upcomingActivities } from '../data/mockData';
 import { Star, CheckCircle2, ArrowLeft } from 'lucide-react';
 
 const FeedbackFormPage = () => {
-  const { user } = useOutletContext();
   const [submitted, setSubmitted] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -16,16 +15,6 @@ const FeedbackFormPage = () => {
     setSubmitted(true);
   };
 
-  if (user?.role !== 'volunteer') {
-    return (
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100">
-          <h1 className="text-3xl font-bold text-slate-900 mb-4">Share Your Feedback</h1>
-          <p className="text-lg text-slate-600">The feedback submission form will be implemented here.</p>
-        </div>
-      </div>
-    );
-  }
 
   if (submitted) {
     return (
