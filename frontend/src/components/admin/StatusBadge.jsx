@@ -1,21 +1,26 @@
 import React from 'react';
 
 const StatusBadge = ({ status }) => {
-  let badgeStyle = "bg-emerald-50 text-emerald-700 border-emerald-200";
+  const normalized = (status || '').toLowerCase();
+  
+  let colorClasses = 'bg-gray-100 text-gray-700 border-gray-200';
 
-  const lower = (status || "").toLowerCase();
-  if (lower === "upcoming") {
-    badgeStyle = "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold";
-  } else if (lower === "ongoing") {
-    badgeStyle = "bg-blue-50 text-blue-700 border-blue-200 font-bold";
-  } else if (lower === "completed") {
-    badgeStyle = "bg-slate-100 text-slate-700 border-slate-200 font-medium";
-  } else if (lower === "cancelled" || lower === "inactive") {
-    badgeStyle = "bg-red-50 text-red-700 border-red-200 font-bold";
+  if (normalized === 'upcoming') {
+    colorClasses = 'bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold';
+  } else if (normalized === 'ongoing') {
+    colorClasses = 'bg-blue-50 text-blue-700 border-blue-200 font-semibold';
+  } else if (normalized === 'completed') {
+    colorClasses = 'bg-gray-100 text-gray-600 border-gray-200 font-medium';
+  } else if (normalized === 'cancelled' || normalized === 'canceled') {
+    colorClasses = 'bg-red-50 text-red-700 border-red-200 font-semibold';
+  } else if (normalized === 'active') {
+    colorClasses = 'bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold';
+  } else if (normalized === 'inactive') {
+    colorClasses = 'bg-gray-100 text-gray-500 border-gray-200 font-medium';
   }
 
   return (
-    <span className={`inline-block px-2.5 py-1 text-xs rounded-md border ${badgeStyle}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs border ${colorClasses}`}>
       {status}
     </span>
   );

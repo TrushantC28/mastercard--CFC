@@ -1,50 +1,48 @@
 import React, { useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import StatusBadge from '../../components/admin/StatusBadge';
-import { mockVolunteers } from '../../data/adminMockData';
+import { mockVolunteers, summaryStats } from '../../data/adminMockData';
 
 const AdminVolunteersPage = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedVolunteer, setSelectedVolunteer] = useState(null);
 
   const filteredVolunteers = mockVolunteers.filter(
-    (v) =>
-      v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.phone.includes(searchTerm)
+    (vol) =>
+      vol.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      vol.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      vol.phone.includes(searchQuery)
   );
 
   return (
-    <AdminLayout>
-      {/* Header & Total Count */}
+    <AdminLayout
+      title="Volunteers Management"
+      subtitle={`Track registered volunteers across NGO activities (${summaryStats.totalVolunteers} Total).`}
+    >
+      {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900">Volunteers</h1>
-          <p className="text-slate-500 font-medium">Manage and review registered NGO volunteers.</p>
+          <h2 className="text-xl font-bold text-gray-900">Volunteers Directory</h2>
+          <p className="text-xs text-gray-500 font-medium">Showing {filteredVolunteers.length} registered volunteers</p>
         </div>
 
-        <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-4 py-2 rounded-lg font-bold text-sm self-start sm:self-auto">
-          Total Volunteers: 842
+        <div className="flex items-center gap-3">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search volunteers by name or email..."
+            className="w-full sm:w-72 px-3.5 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+          />
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm mb-6">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search by volunteer name, email, or contact number..."
-          className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 bg-slate-50"
-        />
-      </div>
-
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden mb-8">
+      {/* Volunteer Table */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mb-6">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+              <tr className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <th className="p-4">Name</th>
                 <th className="p-4">Email</th>
                 <th className="p-4">Phone</th>
@@ -53,22 +51,22 @@ const AdminVolunteersPage = () => {
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-sm font-medium">
+            <tbody className="divide-y divide-gray-100 text-sm">
               {filteredVolunteers.map((vol) => (
-                <tr key={vol.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="p-4 font-bold text-slate-900">{vol.name}</td>
-                  <td className="p-4 text-slate-600">{vol.email}</td>
-                  <td className="p-4 text-slate-600">{vol.phone}</td>
-                  <td className="p-4 font-bold text-slate-800">{vol.eventsParticipated} Events</td>
+                <tr key={vol.id} className="hover:bg-gray-50/60 transition-colors">
+                  <td className="p-4 font-bold text-gray-900">{vol.name}</td>
+                  <td className="p-4 font-medium text-gray-700 text-xs">{vol.email}</td>
+                  <td className="p-4 text-xs font-mono text-gray-600">{vol.phone}</td>
+                  <td className="p-4 font-bold text-emerald-700 text-xs">{vol.eventsParticipated} events</td>
                   <td className="p-4">
                     <StatusBadge status={vol.status} />
                   </td>
                   <td className="p-4 text-right">
                     <button
                       onClick={() => setSelectedVolunteer(vol)}
-                      className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-md transition-colors cursor-pointer"
+                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold rounded-md transition-colors cursor-pointer"
                     >
-                      View
+                      View Profile
                     </button>
                   </td>
                 </tr>
@@ -78,49 +76,68 @@ const AdminVolunteersPage = () => {
         </div>
       </div>
 
-      {/* Volunteer Modal Details */}
+      {/* Volunteer View Details Modal */}
       {selectedVolunteer && (
-        <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 border border-slate-200 shadow-xl relative">
-            <button
-              onClick={() => setSelectedVolunteer(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer"
-            >
-              ✕
-            </button>
+        <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg border border-gray-200 p-6 max-w-md w-full shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 className="text-lg font-bold text-gray-900">Volunteer Profile</h3>
+              <button
+                onClick={() => setSelectedVolunteer(null)}
+                className="text-gray-400 hover:text-gray-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
 
-            <h3 className="text-xl font-extrabold text-slate-900 mb-1">{selectedVolunteer.name}</h3>
-            <p className="text-xs text-slate-500 mb-4">Volunteer Profile & Activity Summary</p>
+            <div className="space-y-3 text-sm">
+              <div>
+                <span className="text-xs font-bold text-gray-400 uppercase">Full Name</span>
+                <p className="font-bold text-gray-900 text-base">{selectedVolunteer.name}</p>
+              </div>
 
-            <div className="space-y-3 text-sm border-t border-slate-100 pt-4">
-              <div className="flex justify-between">
-                <span className="text-slate-500 font-medium">Email:</span>
-                <span className="font-bold text-slate-800">{selectedVolunteer.email}</span>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-bold text-gray-400 uppercase">Email</span>
+                  <p className="font-medium text-gray-800 text-xs">{selectedVolunteer.email}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-gray-400 uppercase">Phone</span>
+                  <p className="font-medium text-gray-800 text-xs">{selectedVolunteer.phone}</p>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 font-medium">Phone:</span>
-                <span className="font-bold text-slate-800">{selectedVolunteer.phone}</span>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-bold text-gray-400 uppercase">Joined Date</span>
+                  <p className="font-medium text-gray-800 text-xs">{selectedVolunteer.joinedDate}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-gray-400 uppercase">Status</span>
+                  <div className="mt-0.5">
+                    <StatusBadge status={selectedVolunteer.status} />
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 font-medium">Joined Date:</span>
-                <span className="font-bold text-slate-800">{selectedVolunteer.joinedDate}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 font-medium">Events Participated:</span>
-                <span className="font-bold text-emerald-700">{selectedVolunteer.eventsParticipated} events</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 font-medium">Account Status:</span>
-                <StatusBadge status={selectedVolunteer.status} />
+
+              <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
+                <span className="text-xs font-bold text-emerald-800 uppercase block mb-1">
+                  Participation Summary
+                </span>
+                <p className="text-sm font-bold text-gray-900">
+                  {selectedVolunteer.eventsParticipated} Completed Volunteering Activities
+                </p>
               </div>
             </div>
 
-            <button
-              onClick={() => setSelectedVolunteer(null)}
-              className="mt-6 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg text-sm transition-colors cursor-pointer"
-            >
-              Close
-            </button>
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => setSelectedVolunteer(null)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold rounded-lg"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

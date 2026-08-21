@@ -1,133 +1,100 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { mockStats } from '../../data/adminMockData';
+import StatCard from '../../components/admin/StatCard';
+import { summaryStats } from '../../data/adminMockData';
 
 const AdminReportsPage = () => {
+  const [downloadMsg, setDownloadMsg] = useState('');
+
   const handleExport = (type) => {
-    alert(`Exporting ${type} report as CSV...`);
+    setDownloadMsg(`Preparing ${type} export... CSV report downloaded!`);
+    setTimeout(() => setDownloadMsg(''), 3000);
   };
 
   return (
-    <AdminLayout>
-      {/* Header & Export Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <AdminLayout
+      title="Reports & Stakeholder Summaries"
+      subtitle="Export high-level reports for NGO board and corporate partners."
+    >
+      {/* Export Action Banner */}
+      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900">Reports & Analytics</h1>
-          <p className="text-slate-500 font-medium">
-            Generate and export stakeholder performance and feedback summary reports.
-          </p>
+          <h2 className="text-lg font-bold text-gray-900">Stakeholder Reporting Suite</h2>
+          <p className="text-xs text-gray-500 font-medium">Download aggregated activity and feedback data in CSV format.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => handleExport('Activity Performance')}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition-colors shadow-sm cursor-pointer"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-colors shadow-sm cursor-pointer"
           >
             📥 Export Report
           </button>
           <button
             onClick={() => handleExport('Volunteer Feedback')}
-            className="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg transition-colors shadow-sm cursor-pointer"
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs rounded-lg transition-colors cursor-pointer border border-gray-200"
           >
-            📊 Export Feedback CSV
+            📊 Export Feedback
           </button>
         </div>
       </div>
 
-      {/* 4 Summary Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs font-bold text-slate-400 uppercase">Total Events</span>
-          <div className="text-3xl font-extrabold text-slate-900 mt-1">{mockStats.totalEvents}</div>
+      {downloadMsg && (
+        <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold rounded-lg text-sm">
+          ✓ {downloadMsg}
         </div>
+      )}
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs font-bold text-slate-400 uppercase">Total Volunteers</span>
-          <div className="text-3xl font-extrabold text-slate-900 mt-1">{mockStats.totalVolunteers}</div>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs font-bold text-slate-400 uppercase">Average Rating</span>
-          <div className="text-3xl font-extrabold text-emerald-700 mt-1">{mockStats.averageRating} / 5</div>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs font-bold text-slate-400 uppercase">Total Feedback Submissions</span>
-          <div className="text-3xl font-extrabold text-slate-900 mt-1">128</div>
-        </div>
+      {/* 4 Metrics Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <StatCard title="Total Events" value={summaryStats.totalEvents} subtext="Organized to date" icon="📅" />
+        <StatCard title="Total Volunteers" value={summaryStats.totalVolunteers} subtext="Registered across events" icon="👥" />
+        <StatCard title="Average Rating" value={`${summaryStats.avgRating} / 5`} subtext="Satisfaction index" icon="⭐" />
+        <StatCard title="Total Feedback" value="128" subtext="Submissions received" icon="💬" />
       </div>
 
-      {/* Report Sections */}
-      <div className="space-y-6">
-        {/* Event Performance */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-2">Event Performance Summary</h2>
-          <p className="text-slate-500 text-sm mb-4">
-            Analysis of event completion rates, corporate partner engagement, and volunteer attendance slots.
+      {/* Summary Sections */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm space-y-3">
+          <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">
+            Event Performance
+          </h3>
+          <p className="text-xs text-gray-600 leading-relaxed">
+            Over 85% of planned volunteering events were completed on schedule. Environment and Education drives achieved the highest volunteer turnout.
           </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-medium">
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <span className="text-slate-400 font-bold uppercase block mb-1">Completion Rate</span>
-              <div className="text-xl font-extrabold text-slate-900">92%</div>
-              <span className="text-slate-500">32 of 35 events completed successfully</span>
-            </div>
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <span className="text-slate-400 font-bold uppercase block mb-1">Avg Slot Utilization</span>
-              <div className="text-xl font-extrabold text-emerald-700">86%</div>
-              <span className="text-slate-500">Average registered volunteers per event</span>
-            </div>
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <span className="text-slate-400 font-bold uppercase block mb-1">Active SPOC Partners</span>
-              <div className="text-xl font-extrabold text-slate-900">18 Companies</div>
-              <span className="text-slate-500">Corporate partners actively sponsoring</span>
-            </div>
-          </div>
+          <ul className="text-xs font-semibold text-gray-700 space-y-1.5 pt-2">
+            <li>• Completed Events: 28</li>
+            <li>• Upcoming Events: 5</li>
+            <li>• Cancelled Events: 2</li>
+          </ul>
         </div>
 
-        {/* Volunteer Participation */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-2">Volunteer Participation Trends</h2>
-          <p className="text-slate-500 text-sm mb-4">
-            Demographic breakdown and retention rates of active volunteers.
+        <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm space-y-3">
+          <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">
+            Volunteer Participation
+          </h3>
+          <p className="text-xs text-gray-600 leading-relaxed">
+            Active volunteer retention rate stands at 78%. Corporate partnerships generated 60% of total volunteer registrations.
           </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-medium">
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <span className="text-slate-400 font-bold uppercase block mb-1">Repeat Volunteers</span>
-              <div className="text-xl font-extrabold text-slate-900">64%</div>
-              <span className="text-slate-500">Participated in 3+ events</span>
-            </div>
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <span className="text-slate-400 font-bold uppercase block mb-1">New Registrations</span>
-              <div className="text-xl font-extrabold text-emerald-700">+124 This Month</div>
-              <span className="text-slate-500">New volunteer signups</span>
-            </div>
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <span className="text-slate-400 font-bold uppercase block mb-1">Active Engagement</span>
-              <div className="text-xl font-extrabold text-slate-900">94% Active</div>
-              <span className="text-slate-500">Engaged within last 90 days</span>
-            </div>
-          </div>
+          <ul className="text-xs font-semibold text-gray-700 space-y-1.5 pt-2">
+            <li>• Active Volunteers: 720</li>
+            <li>• First-time Volunteers: 122</li>
+            <li>• Avg Attendance Rate: 91%</li>
+          </ul>
         </div>
 
-        {/* Feedback Summary */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-2">Feedback & Sentiment Summary</h2>
-          <p className="text-slate-500 text-sm mb-4">
-            Common feedback themes and actionable operational recommendations extracted from submissions.
+        <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm space-y-3">
+          <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">
+            Feedback & Insights
+          </h3>
+          <p className="text-xs text-gray-600 leading-relaxed">
+            Volunteer satisfaction remains high at 4.4/5. Primary logistics suggestions involve water availability and venue ventilation.
           </p>
-
-          <div className="space-y-3 text-xs">
-            <div className="p-3 bg-emerald-50 text-emerald-800 rounded-lg font-semibold flex items-center justify-between">
-              <span>Top Positive Theme: Excellent Event Organization & Meaningful Impact</span>
-              <span className="font-extrabold">78% Mentions</span>
-            </div>
-            <div className="p-3 bg-amber-50 text-amber-800 rounded-lg font-semibold flex items-center justify-between">
-              <span>Top Area for Improvement: Event Onboarding Time & Logistics Instructions</span>
-              <span className="font-extrabold">14% Mentions</span>
-            </div>
-          </div>
+          <ul className="text-xs font-semibold text-gray-700 space-y-1.5 pt-2">
+            <li>• 5-Star Reviews: 68</li>
+            <li>• 4-Star Reviews: 38</li>
+            <li>• Critical Alerts Resolved: 3</li>
+          </ul>
         </div>
       </div>
     </AdminLayout>

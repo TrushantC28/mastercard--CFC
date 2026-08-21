@@ -1,144 +1,179 @@
 import React, { useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { mockFeedback } from '../../data/adminMockData';
+import StatCard from '../../components/admin/StatCard';
+import { mockFeedback, summaryStats, mockEvents, mockSPOCs } from '../../data/adminMockData';
 
 const AdminFeedbackPage = () => {
-  const [filterType, setFilterType] = useState('All');
   const [selectedEvent, setSelectedEvent] = useState('');
+  const [selectedSPOC, setSelectedSPOC] = useState('');
+  const [selectedRating, setSelectedRating] = useState('');
 
-  const ratingCounts = {
-    5: 72,
-    4: 41,
-    3: 10,
-    2: 4,
-    1: 1,
-  };
-
-  const filteredList = mockFeedback.filter((f) => {
-    if (selectedEvent && f.eventName !== selectedEvent) return false;
-    return true;
+  const filteredFeedback = mockFeedback.filter((item) => {
+    const matchEvent = selectedEvent ? item.eventId === selectedEvent || item.eventName === selectedEvent : true;
+    const matchSPOC = selectedSPOC ? item.companyName === selectedSPOC : true;
+    const matchRating = selectedRating ? item.rating === Number(selectedRating) : true;
+    return matchEvent && matchSPOC && matchRating;
   });
 
   return (
-    <AdminLayout>
-      {/* Title */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-extrabold text-slate-900">Feedback Intelligence</h1>
-        <p className="text-slate-500 font-medium">
-          Monitor volunteer experiences, rating distributions, and improvement suggestions.
-        </p>
+    <AdminLayout
+      title="Feedback & Experience Intelligence"
+      subtitle="Analyze volunteer sentiments, rating trends, and operational suggestions."
+    >
+      {/* 4 Feedback Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <StatCard
+          title="Average Rating"
+          value={`${summaryStats.avgRating} / 5`}
+          subtext="Overall Volunteer Satisfaction"
+          icon="⭐"
+        />
+        <StatCard
+          title="Total Feedback"
+          value="128"
+          subtext="Submissions logged"
+          icon="💬"
+        />
+        <StatCard
+          title="Positive Feedback"
+          value="92%"
+          subtext="4 & 5 Star ratings"
+          icon="👍"
+        />
+        <StatCard
+          title="Needs Improvement"
+          value="8%"
+          subtext="Urgent issues & low ratings"
+          icon="⚠️"
+        />
       </div>
 
-      {/* Top 4 Metric Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs font-bold text-slate-400 uppercase">Average Rating</span>
-          <div className="text-3xl font-extrabold text-slate-900 mt-1">4.4 / 5</div>
-          <span className="text-xs text-emerald-600 font-bold mt-1 inline-block">★ High Satisfaction</span>
+      {/* Simple Rating Distribution Bar & Filters */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Rating Distribution */}
+        <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm space-y-3">
+          <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">
+            Rating Distribution
+          </h3>
+          <div className="space-y-2 text-xs font-semibold">
+            {[5, 4, 3, 2, 1].map((stars) => {
+              const count = summaryStats.ratingBreakdown[stars];
+              const pct = Math.round((count / 128) * 100);
+              return (
+                <div key={stars} className="flex items-center gap-3">
+                  <span className="w-12 text-gray-700">{stars} Stars</span>
+                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-500 rounded-full"
+                      style={{ width: `${pct}%` }}
+                    ></div>
+                  </div>
+                  <span className="w-10 text-right text-gray-500">{count} ({pct}%)</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs font-bold text-slate-400 uppercase">Total Feedbacks</span>
-          <div className="text-3xl font-extrabold text-slate-900 mt-1">128</div>
-          <span className="text-xs text-slate-500 font-medium mt-1 inline-block">Across all activities</span>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs font-bold text-slate-400 uppercase">Positive Feedback</span>
-          <div className="text-3xl font-extrabold text-emerald-700 mt-1">88%</div>
-          <span className="text-xs text-emerald-600 font-medium mt-1 inline-block">Rated 4 or 5 stars</span>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs font-bold text-slate-400 uppercase">Needs Improvement</span>
-          <div className="text-3xl font-extrabold text-amber-600 mt-1">12%</div>
-          <span className="text-xs text-amber-600 font-medium mt-1 inline-block">Flagged for follow-up</span>
-        </div>
-      </div>
-
-      {/* Rating Distribution Grid */}
-      <div className="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm mb-8">
-        <h2 className="text-base font-bold text-slate-900 mb-4">Rating Breakdown</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          {[5, 4, 3, 2, 1].map((stars) => (
-            <div key={stars} className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-center">
-              <div className="text-xs font-bold text-amber-500 mb-1">{"★".repeat(stars)} {stars} Stars</div>
-              <div className="text-xl font-extrabold text-slate-900">{ratingCounts[stars]}</div>
-              <span className="text-[11px] text-slate-400 font-medium">Submissions</span>
+        {/* Filter Controls */}
+        <div className="lg:col-span-2 bg-white p-5 rounded-lg border border-gray-200 shadow-sm space-y-4">
+          <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">
+            Filter Feedback Submissions
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Filter by Event</label>
+              <select
+                value={selectedEvent}
+                onChange={(e) => setSelectedEvent(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 font-semibold"
+              >
+                <option value="">All Events</option>
+                {mockEvents.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name}
+                  </option>
+                ))}
+              </select>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Filters Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex flex-wrap gap-2">
-          {['All Feedback', 'By Event', 'By Volunteer', 'By SPOC'].map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setFilterType(filter)}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                filterType === filter
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              {filter}
-            </button>
-          ))}
-        </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Filter by SPOC / Partner</label>
+              <select
+                value={selectedSPOC}
+                onChange={(e) => setSelectedSPOC(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 font-semibold"
+              >
+                <option value="">All Partners</option>
+                {mockSPOCs.map((s) => (
+                  <option key={s.id} value={s.company}>
+                    {s.company}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <select
-          value={selectedEvent}
-          onChange={(e) => setSelectedEvent(e.target.value)}
-          className="px-3 py-2 text-xs border border-slate-200 rounded-lg bg-slate-50 font-semibold"
-        >
-          <option value="">Filter by Specific Event...</option>
-          <option value="Tree Plantation Drive">Tree Plantation Drive</option>
-          <option value="Youth Career Guidance Workshop">Youth Career Guidance Workshop</option>
-          <option value="Blood Donation Camp">Blood Donation Camp</option>
-          <option value="Beach Clean-up Drive">Beach Clean-up Drive</option>
-        </select>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Filter by Rating</label>
+              <select
+                value={selectedRating}
+                onChange={(e) => setSelectedRating(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 font-semibold"
+              >
+                <option value="">All Ratings</option>
+                <option value="5">5 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="3">3 Stars</option>
+                <option value="2">2 Stars</option>
+                <option value="1">1 Star</option>
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Feedback Table */}
-      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden mb-8">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+              <tr className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <th className="p-4">Event</th>
                 <th className="p-4">Volunteer</th>
                 <th className="p-4">Rating</th>
-                <th className="p-4">Feedback / Comment</th>
+                <th className="p-4">Feedback Comment</th>
                 <th className="p-4">Date</th>
-                <th className="p-4 text-right">Action</th>
+                <th className="p-4 text-right">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-sm font-medium">
-              {filteredList.map((fb) => (
-                <tr key={fb.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="p-4 font-bold text-slate-900">{fb.eventName}</td>
-                  <td className="p-4 text-slate-800">{fb.volunteerName}</td>
-                  <td className="p-4">
-                    <span className="font-extrabold text-amber-500 text-sm">★ {fb.rating}</span>
+            <tbody className="divide-y divide-gray-100 text-sm">
+              {filteredFeedback.map((fb) => (
+                <tr key={fb.id} className="hover:bg-gray-50/60 transition-colors">
+                  <td className="p-4 font-bold text-gray-900 text-xs">
+                    {fb.eventName}
+                    <span className="block text-[10px] font-normal text-gray-500">{fb.companyName}</span>
                   </td>
-                  <td className="p-4 max-w-sm text-slate-700">
-                    <p className="line-clamp-2">"{fb.comment}"</p>
-                    {fb.isUrgent && (
-                      <span className="inline-block mt-1 px-2 py-0.5 bg-red-100 text-red-700 font-bold text-[10px] rounded-md">
-                        🚨 Urgent Attention
-                      </span>
+                  <td className="p-4 font-medium text-gray-800 text-xs">{fb.volunteerName}</td>
+                  <td className="p-4 font-bold text-amber-500 text-xs">★ {fb.rating}</td>
+                  <td className="p-4 text-xs text-gray-700 max-w-md">
+                    <p className="font-medium">"{fb.comment}"</p>
+                    {fb.suggestions && (
+                      <p className="text-gray-500 mt-1">
+                        <strong className="text-emerald-700">Suggestion:</strong> {fb.suggestions}
+                      </p>
                     )}
                   </td>
-                  <td className="p-4 text-xs text-slate-500">{fb.date}</td>
+                  <td className="p-4 text-xs text-gray-400">{fb.date}</td>
                   <td className="p-4 text-right">
-                    <button
-                      onClick={() => alert(`Feedback detail for ID ${fb.id}`)}
-                      className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-md transition-colors cursor-pointer"
-                    >
-                      View
-                    </button>
+                    {fb.isUrgent ? (
+                      <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded border border-red-200">
+                        🚨 Urgent
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded">
+                        Reviewed
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}

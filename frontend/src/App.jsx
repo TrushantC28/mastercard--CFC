@@ -1,7 +1,5 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-
-// Public & General Pages
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import LoginForm from './pages/LoginForm';
@@ -12,11 +10,11 @@ import FeedbackPage from './pages/FeedbackPage';
 import InsightsPage from './pages/InsightsPage';
 import ReportsPage from './pages/ReportsPage';
 
-// Admin / NGO Flow Pages
+// Admin / NGO Flow Imports
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminEventsPage from './pages/admin/AdminEventsPage';
-import AdminEventDetails from './pages/admin/AdminEventDetails';
 import CreateEventPage from './pages/admin/CreateEventPage';
+import AdminEventDetails from './pages/admin/AdminEventDetails';
 import AdminVolunteersPage from './pages/admin/AdminVolunteersPage';
 import AdminSPOCsPage from './pages/admin/AdminSPOCsPage';
 import AdminFeedbackPage from './pages/admin/AdminFeedbackPage';
@@ -30,20 +28,20 @@ function App() {
     <BrowserRouter>
       <div className="App font-sans text-slate-800">
         <Routes>
-          {/* Public Routes */}
+          {/* Public & Auth Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/login/:role" element={<LoginForm />} />
           <Route path="/signup" element={<SignupPage />} />
 
-          {/* Volunteer / General Routes */}
+          {/* Volunteer & General Portal Routes */}
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/feedback" element={<FeedbackPage />} />
           <Route path="/feedback/new" element={<FeedbackFormPage />} />
           <Route path="/insights" element={<InsightsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
 
-          {/* Admin / NGO Portal Flow */}
+          {/* Admin / NGO Portal Flow Routes */}
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/events" element={<AdminEventsPage />} />
