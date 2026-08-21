@@ -26,6 +26,7 @@ const DashboardPage = () => {
       setUser(null);
     }
 
+    // Load metrics
     feedbackApi.getFeedback()
       .then(res => {
         if (res.summary) {
@@ -51,52 +52,65 @@ const DashboardPage = () => {
       .catch(() => {});
   }, [navigate]);
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 font-sans text-slate-800">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8">
         {/* Welcome Header */}
-        <div className="bg-slate-900 text-white rounded-3xl p-8 sm:p-10 mb-10 shadow-xl border border-slate-800 relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-8 mb-8 shadow-xl relative overflow-hidden">
+          <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl"></div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
             <div>
-              <span className="inline-block px-3 py-1 bg-amber-400 text-slate-950 font-extrabold text-xs rounded-full mb-3 uppercase tracking-wider">
-                {user?.role ? user.role.toUpperCase() : 'VOLUNTEER PORTAL'}
+              <span className="inline-block px-3 py-1 bg-amber-400/20 text-amber-300 font-bold text-xs rounded-full mb-3 uppercase tracking-wider">
+                {user?.role ? user.role.toUpperCase() : 'USER PORTAL'}
               </span>
-              <h1 className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tight">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">
                 Welcome back, {user?.name || 'Volunteer'}! 👋
               </h1>
-              <p className="text-slate-400 text-sm sm:text-base font-medium">
+              <p className="text-slate-300 text-sm sm:text-base">
                 SevaSahayog Volunteer Experience & AI Insights Dashboard
               </p>
             </div>
+            <button
+              onClick={handleLogout}
+              className="self-start sm:self-auto px-5 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-xl font-bold text-sm transition-all cursor-pointer"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
             <span className="text-3xl mb-2 block">⭐</span>
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Average Rating</span>
             <div className="text-3xl font-extrabold text-slate-900 mt-1">{stats.avgRating} / 5</div>
             <p className="text-xs text-emerald-600 font-semibold mt-2">↑ 94% positive sentiment</p>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
             <span className="text-3xl mb-2 block">💬</span>
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Submissions</span>
             <div className="text-3xl font-extrabold text-slate-900 mt-1">{stats.totalFeedback}</div>
             <p className="text-xs text-slate-500 font-medium mt-2">Across 35 monthly activities</p>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
             <span className="text-3xl mb-2 block">🧠</span>
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">AI Insights</span>
             <div className="text-3xl font-extrabold text-slate-900 mt-1">{stats.activeInsights}</div>
             <p className="text-xs text-amber-600 font-semibold mt-2">Pending admin review</p>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
             <span className="text-3xl mb-2 block">🚨</span>
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Urgent Alerts</span>
             <div className="text-3xl font-extrabold text-slate-900 mt-1">{stats.urgentAlerts}</div>
@@ -105,11 +119,11 @@ const DashboardPage = () => {
         </div>
 
         {/* Quick Action Cards */}
-        <h2 className="text-xl font-extrabold text-slate-900 mb-6">Quick Portal Actions</h2>
+        <h2 className="text-xl font-bold text-slate-800 mb-6">Quick Portal Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Link
             to="/feedback/new"
-            className="group bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-amber-400 transition-all flex flex-col justify-between"
+            className="group bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-amber-300 transition-all flex flex-col justify-between"
           >
             <div>
               <div className="w-12 h-12 rounded-xl bg-amber-400/20 text-amber-600 flex items-center justify-center text-2xl font-bold mb-4 group-hover:scale-110 transition-transform">
@@ -127,7 +141,7 @@ const DashboardPage = () => {
 
           <Link
             to="/insights"
-            className="group bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-indigo-400 transition-all flex flex-col justify-between"
+            className="group bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-amber-300 transition-all flex flex-col justify-between"
           >
             <div>
               <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center text-2xl font-bold mb-4 group-hover:scale-110 transition-transform">
@@ -145,7 +159,7 @@ const DashboardPage = () => {
 
           <Link
             to="/reports"
-            className="group bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-emerald-400 transition-all flex flex-col justify-between"
+            className="group bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-amber-300 transition-all flex flex-col justify-between"
           >
             <div>
               <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-2xl font-bold mb-4 group-hover:scale-110 transition-transform">
