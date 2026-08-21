@@ -1,242 +1,175 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import Navbar from '../components/common/Navbar';
-import Footer from '../components/common/Footer';
-import { feedbackApi, activityApi } from '../services/api';
-import { mockEvents } from '../data/adminMockData';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { upcomingActivities } from '../data/mockData';
+import { Star, CheckCircle2, ArrowLeft } from 'lucide-react';
 
 const FeedbackFormPage = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const paramActivityId = searchParams.get('activityId');
+  const [submitted, setSubmitted] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
 
-  const [activitiesList, setActivitiesList] = useState([]);
-  const [selectedEventId, setSelectedEventId] = useState(paramActivityId || '');
-  const [overallRating, setOverallRating] = useState(5);
-  const [organizationRating, setOrganizationRating] = useState(5);
-  const [impactRating, setImpactRating] = useState(5);
-  const [comments, setComments] = useState('');
-  const [suggestions, setSuggestions] = useState('');
-  const [language, setLanguage] = useState('en');
+  const completedEvents = upcomingActivities.filter(a => a.status === 'Completed');
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
-
-  useEffect(() => {
-    fetchCompletedActivities();
-  }, []);
-
-  const fetchCompletedActivities = async () => {
-    try {
-      const res = await activityApi.getActivities();
-      const list = res.data?.activities || res.data || res.activities || res;
-      if (Array.isArray(list) && list.length > 0) {
-        setActivitiesList(list);
-        if (!selectedEventId) setSelectedEventId(list[0]._id || list[0].id);
-      } else {
-        setActivitiesList(mockEvents);
-        if (!selectedEventId) setSelectedEventId(mockEvents[0].id);
-      }
-    } catch {
-      setActivitiesList(mockEvents);
-      if (!selectedEventId) setSelectedEventId(mockEvents[0].id);
-    }
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setMessage({ type: '', text: '' });
-    setAlreadySubmitted(false);
-
-    try {
-      await feedbackApi.submitFeedback(selectedEventId, {
-        rating: Number(overallRating),
-        overallRating: Number(overallRating),
-        organizationRating: Number(organizationRating),
-        impactRating: Number(impactRating),
-        comments,
-        suggestions,
-        language,
-      });
-
-      setMessage({
-        type: 'success',
-        text: '🎉 Thank you! Your feedback has been submitted successfully.',
-      });
-      setTimeout(() => navigate('/dashboard'), 2000);
-    } catch (err) {
-      const errMsg = err.message || '';
-      if (errMsg.toLowerCase().includes('already') || errMsg.toLowerCase().includes('duplicate')) {
-        setAlreadySubmitted(true);
-        setMessage({
-          type: 'info',
-          text: 'ℹ️ You have already submitted feedback for this activity.',
-        });
-      } else {
-        setMessage({
-          type: 'success',
-          text: 'Feedback recorded! Thank you for helping SevaSahayog improve.',
-        });
-        setTimeout(() => navigate('/dashboard'), 2000);
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    setSubmitted(true);
   };
+
+
+  if (submitted) {
+    return (
+      <div className="max-w-3xl mx-auto py-16 px-4 sm:px-6 font-sans">
+        <div className="bg-white p-10 sm:p-16 rounded-3xl shadow-sm border border-slate-100 text-center">
+          <div className="w-24 h-24 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8">
+            <CheckCircle2 size={48} />
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 mb-4">Thank you for your feedback!</h1>
+          <p className="text-lg text-slate-600 max-w-lg mx-auto mb-10">
+            Your experience helps us create better volunteering opportunities. We appreciate the time you took to share your thoughts.
+          </p>
+          <Link to="/feedback" className="inline-block bg-slate-900 text-white px-8 py-4 rounded-xl font-bold hover:bg-black transition-colors shadow-md hover:shadow-lg">
+            Return to Feedback
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 flex flex-col">
-      <Navbar />
+    <div className="max-w-3xl mx-auto pb-12 font-sans space-y-6">
+      
+      <Link to="/feedback" className="inline-flex items-center gap-2 text-slate-500 hover:text-blue-600 font-bold transition-colors">
+        <ArrowLeft size={20} /> Back
+      </Link>
 
-      <main className="flex-1 max-w-2xl w-full mx-auto p-4 sm:p-8">
-        <div className="bg-white border border-gray-200 p-6 sm:p-8 rounded-xl shadow-sm">
-          <div className="border-b border-gray-100 pb-4 mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Volunteer Feedback Form</h1>
-            <p className="text-xs text-gray-500 font-medium mt-1">
-              Share your experience! Takes less than 1 minute and directly impacts future activities.
-            </p>
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-900 to-blue-800 p-8 sm:p-10 text-white relative overflow-hidden">
+          <div className="relative z-10">
+            <h1 className="text-3xl font-black mb-2">Share Your Experience</h1>
+            <p className="text-blue-100 font-medium">Your feedback helps us improve future volunteering activities.</p>
+          </div>
+          <Star className="absolute -right-10 -bottom-10 text-white opacity-10" size={180} />
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-8 sm:p-10 space-y-8">
+          
+          {/* Event Selection */}
+          <div className="space-y-3">
+            <label htmlFor="event" className="block text-sm font-bold text-slate-700 uppercase tracking-wider">
+              Select Event
+            </label>
+            <div className="relative">
+              <select 
+                id="event" 
+                required
+                className="w-full appearance-none pl-4 pr-10 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 font-medium cursor-pointer"
+              >
+                <option value="" disabled selected>Choose a completed event</option>
+                {completedEvents.map(event => (
+                  <option key={event.id} value={event.id}>{event.title} ({event.date})</option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
           </div>
 
-          {message.text && (
-            <div
-              className={`mb-6 p-4 rounded-lg font-semibold text-xs border ${
-                message.type === 'success'
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                  : message.type === 'info'
-                  ? 'bg-blue-50 text-blue-800 border-blue-200'
-                  : 'bg-red-50 text-red-800 border-red-200'
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
-
-          {alreadySubmitted ? (
-            <div className="text-center py-8 space-y-4">
-              <div className="text-4xl">✅</div>
-              <h3 className="text-lg font-bold text-gray-900">Feedback Already Submitted</h3>
-              <p className="text-xs text-gray-500">
-                You have already shared feedback for this volunteering activity. Thank you!
-              </p>
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm"
-              >
-                Return to Dashboard
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-5 text-sm">
-              {/* Event Selection */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                  Select Activity / Event *
-                </label>
-                <select
-                  value={selectedEventId}
-                  onChange={(e) => setSelectedEventId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-900 font-semibold"
-                >
-                  {activitiesList.map((evt) => (
-                    <option key={evt._id || evt.id} value={evt._id || evt.id}>
-                      {evt.title || evt.name} ({evt.date || 'Completed'})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Overall Rating */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                  Overall Experience Rating (1 to 5 Stars) *
-                </label>
-                <div className="flex gap-2 pt-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setOverallRating(star)}
-                      className={`w-10 h-10 rounded-lg text-sm font-bold flex items-center justify-center transition-colors cursor-pointer border ${
-                        overallRating >= star
-                          ? 'bg-emerald-600 text-white border-emerald-600'
-                          : 'bg-gray-50 text-gray-400 border-gray-200'
-                      }`}
-                    >
-                      ★ {star}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Language Selector */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                  Preferred Language
-                </label>
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full px-3.5 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-900 font-medium"
-                >
-                  <option value="en">English</option>
-                  <option value="hi">Hindi (हिंदी)</option>
-                  <option value="mr">Marathi (मराठी)</option>
-                </select>
-              </div>
-
-              {/* Comments */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                  Comments & Experience *
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  value={comments}
-                  onChange={(e) => setComments(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  placeholder="What went well? Any issues faced?"
-                ></textarea>
-              </div>
-
-              {/* Suggestions */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
-                  Suggestions for Improvement
-                </label>
-                <textarea
-                  rows={3}
-                  value={suggestions}
-                  onChange={(e) => setSuggestions(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  placeholder="How can we improve logistics, safety, or timing next time?"
-                ></textarea>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+          {/* Rating */}
+          <div className="space-y-3">
+            <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">
+              Overall Rating
+            </label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   type="button"
-                  onClick={() => navigate('/dashboard')}
-                  className="px-4 py-2 border border-gray-200 text-gray-600 font-semibold text-xs rounded-lg hover:bg-gray-50 cursor-pointer"
+                  key={star}
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHoveredRating(star)}
+                  onMouseLeave={() => setHoveredRating(0)}
+                  className="focus:outline-none transition-transform hover:scale-110"
                 >
-                  Cancel
+                  <Star 
+                    size={40} 
+                    fill={(hoveredRating || rating) >= star ? "#fbbf24" : "none"} 
+                    className={(hoveredRating || rating) >= star ? "text-amber-400" : "text-slate-200"}
+                  />
                 </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors cursor-pointer"
-                >
-                  {isLoading ? 'Submitting...' : 'Submit Feedback'}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-      </main>
+              ))}
+            </div>
+          </div>
 
-      <Footer />
+          {/* Feedback Themes */}
+          <div className="space-y-3">
+            <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">
+              What went well? (Select all that apply)
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {['Organization', 'Communication', 'Event Experience', 'Impact', 'Volunteer Support'].map(theme => (
+                <label key={theme} className="cursor-pointer">
+                  <input type="checkbox" className="peer sr-only" name="themes" value={theme} />
+                  <span className="inline-block px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-checked:border-blue-200 transition-colors">
+                    {theme}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Text Areas */}
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <label htmlFor="enjoyed" className="block text-sm font-bold text-slate-700 uppercase tracking-wider">
+                What did you enjoy the most?
+              </label>
+              <textarea 
+                id="enjoyed" 
+                rows={3} 
+                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 placeholder:text-slate-400"
+                placeholder="Share your positive highlights..."
+                required
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <label htmlFor="improvements" className="block text-sm font-bold text-slate-700 uppercase tracking-wider">
+                What could be improved?
+              </label>
+              <textarea 
+                id="improvements" 
+                rows={3} 
+                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 placeholder:text-slate-400"
+                placeholder="Let us know how we can do better next time..."
+              />
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="pt-6 border-t border-slate-100">
+            <button 
+              type="submit" 
+              disabled={rating === 0}
+              className={`w-full py-4 rounded-xl font-black text-lg transition-all ${
+                rating === 0 
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
+              }`}
+            >
+              Submit Feedback
+            </button>
+            {rating === 0 && (
+              <p className="text-center text-sm text-slate-500 mt-3">Please select a rating to continue.</p>
+            )}
+          </div>
+        </form>
+
+      </div>
     </div>
   );
 };

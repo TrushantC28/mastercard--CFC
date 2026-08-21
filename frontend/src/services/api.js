@@ -1,8 +1,4 @@
-const BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  'http://localhost:8000'
-).replace(/\/+$/, '');
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
 const request = async (endpoint, options = {}) => {
   const headers = {
@@ -26,7 +22,21 @@ const request = async (endpoint, options = {}) => {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const errorMessage = data?.message || data?.error?.message || data?.error || 'Something went wrong';
+    console.error(`API Error [${endpoint}]:`, data);
+    
+    let errorMessage = 'Something went wrong';
+    if (data) {
+      if (typeof data.message === 'string') {
+        errorMessage = data.message;
+      } else if (typeof data.error === 'string') {
+        errorMessage = data.error;
+      } else if (data.error && typeof data.error.message === 'string') {
+        errorMessage = data.error.message;
+      } else if (data.message && typeof data.message.message === 'string') {
+        errorMessage = data.message.message;
+      }
+    }
+
     const error = new Error(errorMessage);
     error.response = { data, status: response.status };
     throw error;

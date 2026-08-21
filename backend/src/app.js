@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import ApiResponse from "./utils/ApiResponse.js";
 import { errorHandler } from "./middleware/error.middleware.js";
+import ApiResponse from "./utils/ApiResponse.js";
 import authRouter from "./routes/auth.routes.js";
 import userRouter from "./routes/user.routes.js";
 import proposalRouter from "./routes/proposal.routes.js";
@@ -21,11 +22,13 @@ const configuredOrigins = rawCorsOrigin && rawCorsOrigin !== "*"
 app.use(
     cors({
         origin: (origin, callback) => {
-            if (!origin) return callback(null, true); // Allow mobile, curl, server-to-server
+            // Allow requests with no origin (mobile apps, curl, Postman, server-to-server)
+            if (!origin) return callback(null, true);
 
             const cleanOrigin = origin.trim().replace(/\/+$/, "");
 
             if (!rawCorsOrigin || rawCorsOrigin === "*") {
+                // Dynamically reflect origin to satisfy credentials: true
                 return callback(null, true);
             }
 
@@ -50,13 +53,16 @@ app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
 
-// Health check endpoints for Render
 app.get("/", (req, res) => {
-    return res.status(200).json(new ApiResponse(200, {}, "Mastercard CFC API is running"));
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Mastercard CFC API is running"));
 });
 
 app.get("/health", (req, res) => {
-    return res.status(200).json(new ApiResponse(200, { status: "OK" }, "Health check passed"));
+    return res
+        .status(200)
+        .json(new ApiResponse(200, { status: "OK", timestamp: new Date().toISOString() }, "Health check passed"));
 });
 
 // Routes

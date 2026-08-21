@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   Ear, 
   Lightbulb, 
@@ -8,7 +7,6 @@ import {
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 import ImpactInfographic from '../components/common/ImpactInfographic';
-import heroImg from '../assets/hero.png';
 import './LandingPage.css';
 
 const LandingPage = () => {

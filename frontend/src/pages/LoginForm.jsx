@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
@@ -30,6 +30,7 @@ const LoginForm = () => {
     roleTitle = 'Volunteer Login';
   } else if (isCorporate) {
     roleTitle = 'Corporate SPOC Login';
+    isCorporate = true;
   }
 
   const navigateToDashboard = (userRole) => {
@@ -60,16 +61,46 @@ const LoginForm = () => {
       if (isCorporate) {
         loginPayload.companyName = companyName;
       }
-
-      const res = await authApi.login(loginPayload);
-      const loggedUser = res?.user || mockUser;
-      localStorage.setItem('user', JSON.stringify(loggedUser));
-      navigateToDashboard(loggedUser.role || userRole);
+      
+      const response = await authApi.login(loginPayload);
+      
+      // Extract auth payload from backend ApiResponse ({ data: { token, user } })
+      const authData = response?.data || response;
+      const token = authData?.token || response?.token;
+      const user = authData?.user || response?.user || {
+        email,
+        role: role || 'volunteer',
+        name: email.split('@')[0],
+      };
+      
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+      
+      // Navigate to dashboard
+      navigate('/dashboard');
     } catch (err) {
-      console.warn('API login fallback, utilizing mock session:', err);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      localStorage.setItem('token', 'demo-jwt-token');
-      navigateToDashboard(userRole);
+      console.error("Login submission error:", err, err?.response?.data);
+      
+      let errorMessage = 'Login failed. Please check your email and password.';
+      
+      if (err?.response?.data) {
+        const data = err.response.data;
+        if (typeof data.message === 'string') {
+          errorMessage = data.message;
+        } else if (typeof data.error === 'string') {
+          errorMessage = data.error;
+        } else if (data.error && typeof data.error.message === 'string') {
+          errorMessage = data.error.message;
+        }
+      } else if (err?.message && err.message !== '[object Object]' && err.message !== 'Something went wrong') {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

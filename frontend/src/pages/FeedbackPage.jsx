@@ -1,138 +1,107 @@
-import React, { useState, useEffect } from 'react';
-import Navbar from '../components/common/Navbar';
-import Footer from '../components/common/Footer';
-import { feedbackApi } from '../services/api';
+import { Link } from 'react-router-dom';
+import { recentFeedback, volunteerStats } from '../data/mockData';
+import { Star, MessageSquare, Plus, ChevronRight } from 'lucide-react';
 
 const FeedbackPage = () => {
-  const [feedbackList, setFeedbackList] = useState([]);
-  const [summary, setSummary] = useState(null);
-  const [minRating, setMinRating] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchFeedback = () => {
-    setIsLoading(true);
-    const params = {};
-    if (minRating) params.minRating = minRating;
-
-    feedbackApi.getFeedback(params)
-      .then((res) => {
-        setFeedbackList(res.data || []);
-        setSummary(res.summary || null);
-      })
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
-  };
-
-  useEffect(() => {
-    fetchFeedback();
-  }, [minRating]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 font-sans text-slate-800">
-      <Navbar />
+    <div className="max-w-7xl mx-auto space-y-8 font-sans pb-12">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 mb-1">Your Feedback</h1>
+          <p className="text-slate-500 font-medium">Your insights help us improve the volunteering experience.</p>
+        </div>
+        <Link to="/feedback/new" className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm">
+          <Plus size={20} /> Share Feedback
+        </Link>
+      </div>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-extrabold text-slate-900">Feedback Analytics & Submissions</h1>
-            <p className="text-slate-500">View role-scoped volunteer feedback responses and extracted themes</p>
+      {/* Stats Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="p-4 rounded-full bg-blue-100 text-blue-600">
+            <MessageSquare size={32} />
           </div>
-
-          <div className="flex items-center gap-3">
-            <label className="text-sm font-bold text-slate-700">Filter Rating:</label>
-            <select
-              value={minRating}
-              onChange={(e) => setMinRating(e.target.value)}
-              className="px-4 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 font-semibold"
-            >
-              <option value="">All Ratings</option>
-              <option value="4">4+ Stars</option>
-              <option value="3">3+ Stars</option>
-              <option value="1">1 - 2 Stars (Low)</option>
-            </select>
+          <div>
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Total Submitted</p>
+            <p className="text-3xl font-black text-slate-900">{volunteerStats.feedbackSubmitted}</p>
           </div>
         </div>
-
-        {/* Analytics Summary */}
-        {summary && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-              <span className="text-xs font-bold text-slate-400 uppercase">Average Rating</span>
-              <div className="text-3xl font-extrabold text-slate-900 mt-1">{summary.averageOverallRating || '5.0'} / 5</div>
-            </div>
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-              <span className="text-xs font-bold text-slate-400 uppercase">Total Responses</span>
-              <div className="text-3xl font-extrabold text-slate-900 mt-1">{summary.totalResponses || feedbackList.length}</div>
-            </div>
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-              <span className="text-xs font-bold text-slate-400 uppercase">Top Theme</span>
-              <div className="text-lg font-extrabold text-amber-600 mt-1">
-                {summary.topThemes?.[0]?.themeName || 'Timing & Logistics'}
+        
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="p-4 rounded-full bg-amber-100 text-amber-500">
+            <Star size={32} />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Average Rating</p>
+            <div className="flex items-center gap-2">
+              <p className="text-3xl font-black text-slate-900">4.5</p>
+              <div className="flex text-amber-400">
+                {[1,2,3,4].map(i => <Star key={i} size={16} fill="currentColor" />)}
+                <Star size={16} className="text-amber-200" fill="currentColor" />
               </div>
             </div>
           </div>
-        )}
-
-        {/* Feedback List Table */}
-        <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
-          {isLoading ? (
-            <div className="p-8 text-center text-slate-500 font-semibold">Loading feedback records...</div>
-          ) : feedbackList.length === 0 ? (
-            <div className="p-8 text-center text-slate-500 font-semibold">No feedback submissions found matching criteria.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="p-4">Rating</th>
-                    <th className="p-4">Volunteer</th>
-                    <th className="p-4">Comments</th>
-                    <th className="p-4">Themes</th>
-                    <th className="p-4">Urgent</th>
-                    <th className="p-4">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {feedbackList.map((fb) => (
-                    <tr key={fb._id} className="hover:bg-slate-50/50">
-                      <td className="p-4 font-bold text-amber-600">★ {fb.overallRating}</td>
-                      <td className="p-4 font-semibold text-slate-900">{fb.volunteerId?.name || 'Volunteer'}</td>
-                      <td className="p-4 max-w-xs truncate text-slate-600">{fb.comments || 'No comments'}</td>
-                      <td className="p-4">
-                        {Array.isArray(fb.themes) && fb.themes.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {fb.themes.map((t, idx) => (
-                              <span key={idx} className="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-md">
-                                {t.themeName}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 text-xs">Uncategorized</span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        {fb.isUrgent ? (
-                          <span className="px-2 py-1 bg-red-100 text-red-700 font-bold text-xs rounded-lg animate-pulse">
-                            🚨 URGENT
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 text-xs">Normal</span>
-                        )}
-                      </td>
-                      <td className="p-4 text-xs text-slate-400">
-                        {new Date(fb.submittedAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
-      </main>
+      </div>
 
-      <Footer />
+      {/* Feedback List */}
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 bg-slate-50">
+          <h2 className="text-xl font-black text-slate-900">Past Submissions</h2>
+        </div>
+        
+        <div className="divide-y divide-slate-100">
+          {recentFeedback.map(item => (
+            <div key={item.id} className="p-6 sm:p-8 hover:bg-slate-50 transition-colors flex flex-col md:flex-row gap-6 justify-between items-start">
+              
+              <div className="space-y-4 flex-1">
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="text-xl font-bold text-slate-900">{item.eventName}</h3>
+                    <span className="inline-block px-2.5 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-500">
+                      {item.status}
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold text-slate-400">{item.date}</p>
+                </div>
+                
+                <div className="flex items-center gap-1 text-amber-400">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={18} fill={i < item.rating ? "currentColor" : "none"} className={i < item.rating ? "" : "text-slate-200"} />
+                  ))}
+                </div>
+                
+                <p className="text-slate-700 italic border-l-4 border-amber-200 pl-4 py-1">
+                  "{item.shortFeedback}"
+                </p>
+                
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg border border-blue-100">
+                    Theme: {item.theme}
+                  </span>
+                  <span className={`px-3 py-1 text-xs font-bold rounded-lg border ${
+                    item.sentiment === 'Positive' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                    item.sentiment === 'Negative' ? 'bg-red-50 text-red-700 border-red-100' :
+                    'bg-slate-100 text-slate-700 border-slate-200'
+                  }`}>
+                    Sentiment: {item.sentiment}
+                  </span>
+                </div>
+              </div>
+              
+              <button className="flex items-center gap-1 text-blue-600 font-bold hover:text-blue-800 transition-colors py-2 whitespace-nowrap">
+                View Feedback <ChevronRight size={16} />
+              </button>
+
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 };

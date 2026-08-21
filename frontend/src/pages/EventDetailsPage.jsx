@@ -1,191 +1,171 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import Navbar from '../components/common/Navbar';
-import Footer from '../components/common/Footer';
-import StatusBadge from '../components/admin/StatusBadge';
-import { activityApi, registrationApi } from '../services/api';
-import { mockEvents } from '../data/adminMockData';
+import { useState } from 'react';
+import { useParams, Link, useOutletContext } from 'react-router-dom';
+import { upcomingActivities } from '../data/mockData';
+import { CalendarDays, MapPin, Clock, Users, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 const EventDetailsPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const [activity, setActivity] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [registering, setRegistering] = useState(false);
-  const [message, setMessage] = useState(null);
+  const { user } = useOutletContext();
+  
+  // Find event or default to the first one for demo purposes
+  const event = upcomingActivities.find(a => a.id === parseInt(id)) || upcomingActivities[0];
+  
+  const [status, setStatus] = useState(event.status);
 
-  useEffect(() => {
-    fetchActivityDetails();
-  }, [id]);
-
-  const fetchActivityDetails = async () => {
-    setLoading(true);
-    try {
-      const res = await activityApi.getActivityById(id);
-      const data = res.data || res.activity || res;
-      if (data && (data._id || data.id)) {
-        setActivity(data);
-      } else {
-        // Fallback to mock data
-        const found = mockEvents.find((e) => String(e.id) === String(id));
-        setActivity(found || mockEvents[0]);
-      }
-    } catch (err) {
-      console.warn('Activity fetch failed, using fallback:', err);
-      const found = mockEvents.find((e) => String(e.id) === String(id));
-      setActivity(found || mockEvents[0]);
-    } finally {
-      setLoading(false);
-    }
+  const handleRegister = () => {
+    setStatus('Registered');
+    // In a real app, make API call here
   };
 
-  const handleRegister = async () => {
-    setRegistering(true);
-    setMessage(null);
-    try {
-      await registrationApi.registerForActivity(activity._id || activity.id);
-      setMessage({ type: 'success', text: '🎉 You are now registered for this event!' });
-    } catch (err) {
-      const errMsg = err.message || '';
-      if (errMsg.toLowerCase().includes('already') || errMsg.toLowerCase().includes('duplicate')) {
-        setMessage({ type: 'info', text: 'ℹ️ You are already registered for this event!' });
-      } else {
-        setMessage({ type: 'error', text: `Registration error: ${errMsg || 'Unable to complete signup.'}` });
-      }
-    } finally {
-      setRegistering(false);
-    }
-  };
-
-  if (loading) {
+  if (user?.role !== 'volunteer') {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-between">
-        <Navbar />
-        <div className="text-center py-20 text-gray-500 font-medium">Loading event details...</div>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (!activity) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-between">
-        <Navbar />
-        <div className="max-w-4xl mx-auto p-8 text-center">
-          <h2 className="text-xl font-bold text-gray-800">Event Not Found</h2>
-          <Link to="/events" className="mt-4 inline-block text-emerald-600 font-semibold text-sm">
-            ← Back to Events
-          </Link>
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100">
+          <h1 className="text-3xl font-bold text-slate-900 mb-4">Event Details</h1>
+          <p className="text-lg text-slate-600">Detailed information about the selected event will appear here.</p>
         </div>
-        <Footer />
       </div>
     );
   }
-
-  const title = activity.title || activity.name;
-  const status = activity.status || 'open_for_signup';
-  const maxSlots = activity.maxVolunteers || activity.totalSlots || 30;
-  const regSlots = activity.registeredVolunteersCount ?? activity.registeredVolunteers ?? 0;
-  const isOpen = status === 'open_for_signup';
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 flex flex-col">
-      <Navbar />
+    <div className="max-w-5xl mx-auto pb-12 font-sans space-y-6">
+      
+      {/* Back Button */}
+      <Link to="/events" className="inline-flex items-center gap-2 text-slate-500 hover:text-blue-600 font-bold transition-colors">
+        <ArrowLeft size={20} /> Back to Events
+      </Link>
 
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-8">
-        <div className="mb-6">
-          <Link to="/events" className="text-xs font-bold text-emerald-600 hover:text-emerald-700">
-            ← Back to All Activities
-          </Link>
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        {/* Header Image */}
+        <div className="h-64 sm:h-80 md:h-96 w-full relative">
+          <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+          <div className="absolute bottom-6 left-6 right-6 md:bottom-10 md:left-10 md:right-10 text-white">
+            <span className={`inline-block px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-full mb-4 shadow-sm ${
+              status === 'Registered' ? 'bg-amber-400 text-amber-950' :
+              status === 'Completed' ? 'bg-slate-700 text-white' :
+              'bg-emerald-400 text-emerald-950'
+            }`}>
+              {status}
+            </span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black mb-2 leading-tight">{event.title}</h1>
+            <p className="text-lg sm:text-xl font-medium text-slate-200">Organized by <span className="text-white font-bold">{event.ngo}</span></p>
+          </div>
         </div>
 
-        {message && (
-          <div
-            className={`p-4 rounded-lg mb-6 text-sm font-medium border flex items-center justify-between ${
-              message.type === 'success'
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                : message.type === 'info'
-                ? 'bg-blue-50 text-blue-800 border-blue-200'
-                : 'bg-red-50 text-red-800 border-red-200'
-            }`}
-          >
-            <span>{message.text}</span>
-            <button onClick={() => setMessage(null)} className="text-xs font-bold cursor-pointer">
-              ✕
-            </button>
-          </div>
-        )}
-
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-6">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <StatusBadge status={status} />
-                <span className="text-xs font-bold text-gray-400 uppercase">
-                  {activity.category || activity.eventType || 'Community Drive'}
-                </span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">{title}</h1>
-            </div>
-
-            {isOpen && (
-              <button
-                disabled={registering}
-                onClick={handleRegister}
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-lg transition-colors shadow-sm cursor-pointer whitespace-nowrap"
-              >
-                {registering ? 'Processing...' : 'Register Now'}
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg text-xs font-semibold">
-            <div>
-              <span className="text-gray-400 block uppercase text-[10px]">Date & Time</span>
-              <p className="text-gray-800 text-sm mt-0.5">
-                📅 {activity.date || activity.startDate ? new Date(activity.date || activity.startDate).toLocaleDateString() : 'Upcoming'}
-              </p>
-            </div>
-            <div>
-              <span className="text-gray-400 block uppercase text-[10px]">Location</span>
-              <p className="text-gray-800 text-sm mt-0.5">📍 {activity.location || 'Pune Venue'}</p>
-            </div>
-            <div>
-              <span className="text-gray-400 block uppercase text-[10px]">Capacity & Slots</span>
-              <p className="text-emerald-700 text-sm mt-0.5 font-bold">
-                👥 {regSlots} / {maxSlots} Registered
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Activity Details</h3>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {activity.description ||
-                'This activity is organized in collaboration with SevaSahayog to empower community development, local outreach, and hands-on volunteering. All tools and orientation will be provided at the venue.'}
-            </p>
-          </div>
-
-          {status === 'completed' && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-bold text-emerald-900">Activity Completed!</p>
-                <p className="text-xs text-emerald-700 mt-0.5">
-                  Attended this drive? Share your feedback to help us measure community impact.
+        {/* Content Area */}
+        <div className="p-6 md:p-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            
+            {/* Main Details */}
+            <div className="lg:col-span-2 space-y-8">
+              <section>
+                <h2 className="text-2xl font-black text-slate-900 mb-4">About the Event</h2>
+                <p className="text-slate-600 text-lg leading-relaxed">
+                  {event.description}
                 </p>
-              </div>
-              <Link
-                to={`/feedback/new?activityId=${activity._id || activity.id}`}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition-colors shadow-sm"
-              >
-                Submit Feedback
-              </Link>
-            </div>
-          )}
-        </div>
-      </main>
+                {/* Simulated extended description */}
+                <p className="text-slate-600 text-lg leading-relaxed mt-4">
+                  This volunteering activity is a great way to give back to the community while meeting like-minded individuals. We provide all necessary materials and a brief orientation session before we begin.
+                </p>
+              </section>
 
-      <Footer />
+              <section>
+                <h2 className="text-2xl font-black text-slate-900 mb-4">Volunteer Requirements</h2>
+                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6">
+                  <ul className="space-y-3 text-slate-700 font-medium">
+                    <li className="flex gap-3">
+                      <CheckCircle2 className="text-amber-500 shrink-0 mt-0.5" size={20} />
+                      <span>{event.requirements}</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <CheckCircle2 className="text-amber-500 shrink-0 mt-0.5" size={20} />
+                      <span>Enthusiasm and willingness to help.</span>
+                    </li>
+                  </ul>
+                </div>
+              </section>
+            </div>
+
+            {/* Sticky Sidebar */}
+            <div className="space-y-6">
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 space-y-6">
+                
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl shrink-0"><CalendarDays size={24} /></div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Date</p>
+                      <p className="text-slate-900 font-bold">{event.date}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-4">
+                    <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl shrink-0"><Clock size={24} /></div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Time</p>
+                      <p className="text-slate-900 font-bold">{event.time}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-4">
+                    <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl shrink-0"><MapPin size={24} /></div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Location</p>
+                      <p className="text-slate-900 font-bold">{event.location}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-4">
+                    <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl shrink-0"><Users size={24} /></div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Availability</p>
+                      <p className="text-slate-900 font-bold">
+                        {event.slots > 0 ? `${event.slots} slots available` : 'Event Full'}
+                      </p>
+                      <p className="text-sm text-slate-500 mt-0.5">{event.registeredVolunteers} volunteers registered</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-slate-200">
+                  {status === 'Open' ? (
+                    <button 
+                      onClick={handleRegister}
+                      disabled={event.slots === 0}
+                      className={`w-full py-4 rounded-xl font-black text-lg transition-all shadow-md ${
+                        event.slots === 0 
+                          ? 'bg-slate-200 text-slate-500 cursor-not-allowed shadow-none'
+                          : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
+                      }`}
+                    >
+                      {event.slots === 0 ? 'Fully Booked' : 'Register for Event'}
+                    </button>
+                  ) : status === 'Registered' ? (
+                    <button disabled className="w-full py-4 rounded-xl font-black text-lg bg-amber-100 text-amber-800 cursor-default flex items-center justify-center gap-2">
+                      <CheckCircle2 size={24} /> You're Registered
+                    </button>
+                  ) : (
+                    <button disabled className="w-full py-4 rounded-xl font-black text-lg bg-slate-100 text-slate-500 cursor-default">
+                      Event Completed
+                    </button>
+                  )}
+                </div>
+
+              </div>
+
+              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 text-center">
+                <p className="text-sm font-bold text-blue-900 mb-2">Have questions?</p>
+                <p className="text-blue-600/80 mb-4 text-sm">Contact the organizer directly.</p>
+                <button className="text-blue-700 font-black hover:underline">Contact {event.ngo}</button>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

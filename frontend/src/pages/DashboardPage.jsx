@@ -1,240 +1,473 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import Navbar from '../components/common/Navbar';
-import Footer from '../components/common/Footer';
-import StatusBadge from '../components/admin/StatusBadge';
-import { activityApi, registrationApi } from '../services/api';
-import { mockEvents } from '../data/adminMockData';
+import { useOutletContext, Link } from "react-router-dom";
+import {
+  volunteerStats,
+  upcomingActivities,
+  recentFeedback,
+} from "../data/mockData";
 
-const DashboardPage = () => {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [myRegistrations, setMyRegistrations] = useState([]);
-  const [upcomingActivities, setUpcomingActivities] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      try { setUser(JSON.parse(stored)); } catch {}
-    }
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    try {
-      const [regRes, actRes] = await Promise.allSettled([
-        registrationApi.getMyRegistrations('me'),
-        activityApi.getActivities({ status: 'open_for_signup' }),
-      ]);
-
-      if (regRes.status === 'fulfilled' && regRes.value) {
-        const regs = regRes.value.data?.registrations || regRes.value.data || regRes.value;
-        if (Array.isArray(regs)) setMyRegistrations(regs);
-      }
-
-      if (actRes.status === 'fulfilled' && actRes.value) {
-        const acts = actRes.value.data?.activities || actRes.value.data || actRes.value;
-        if (Array.isArray(acts) && acts.length > 0) setUpcomingActivities(acts.slice(0, 3));
-        else setUpcomingActivities(mockEvents.slice(0, 3));
-      } else {
-        setUpcomingActivities(mockEvents.slice(0, 3));
-      }
-    } catch (err) {
-      console.warn('Error loading dashboard data:', err);
-      setUpcomingActivities(mockEvents.slice(0, 3));
-    } finally {
-      setLoading(false);
-    }
+const StatCard = ({ label, value, type }) => {
+  const styles = {
+    blue: {
+      bg: "bg-blue-50",
+      icon: "text-blue-600",
+      value: "text-[#173b59]",
+    },
+    green: {
+      bg: "bg-emerald-50",
+      icon: "text-emerald-600",
+      value: "text-emerald-700",
+    },
+    purple: {
+      bg: "bg-purple-50",
+      icon: "text-purple-600",
+      value: "text-purple-700",
+    },
+    yellow: {
+      bg: "bg-amber-50",
+      icon: "text-amber-600",
+      value: "text-amber-700",
+    },
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
+  const style = styles[type] || styles.blue;
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all duration-200">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
+            {label}
+          </p>
+
+          <p className={`text-3xl font-extrabold ${style.value}`}>
+            {value}
+          </p>
+        </div>
+
+        <div
+          className={`w-11 h-11 rounded-xl ${style.bg} flex items-center justify-center`}
+        >
+          {type === "blue" && <span className={`text-xl ${style.icon}`}>▣</span>}
+          {type === "green" && <span className={`text-xl ${style.icon}`}>◷</span>}
+          {type === "purple" && <span className={`text-xl ${style.icon}`}>♛</span>}
+          {type === "yellow" && <span className={`text-xl ${style.icon}`}>★</span>}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const StatusBadge = ({ status }) => {
+  const styles = {
+    Registered: "bg-amber-100 text-amber-800",
+    Completed: "bg-slate-100 text-slate-700",
+    Open: "bg-emerald-100 text-emerald-700",
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 flex flex-col">
-      <Navbar />
+    <span
+      className={`px-3 py-1 rounded-full text-xs font-bold ${styles[status] || "bg-slate-100 text-slate-700"
+        }`}
+    >
+      {status}
+    </span>
+  );
+};
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-8">
-        {/* Welcome Banner */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 mb-8 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <span className="inline-block px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-full mb-2 border border-emerald-200">
-              VOLUNTEER PORTAL
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-              Welcome back, {user?.name || 'Volunteer'}! 👋
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
-              Thank you for contributing to SevaSahayog community initiatives.
-            </p>
-          </div>
+const DashboardPage = () => {
+  const { user } = useOutletContext();
+  const role = user?.role ? user.role.toLowerCase() : "volunteer";
 
-          <div className="flex items-center gap-3">
+  if (role === "admin") {
+    return (
+      <div className="w-full font-sans pb-10">
+        <section className="w-full rounded-3xl bg-gradient-to-r from-[#173b59] to-[#245c7a] text-white px-6 sm:px-8 lg:px-10 py-8 shadow-md mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            <div>
+              <p className="text-sm font-semibold text-blue-100 mb-2">
+                Administrator / NGO Portal
+              </p>
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+                Welcome, <span className="text-amber-400">{user?.name || "Admin"}</span>
+              </h1>
+              <p className="mt-2 text-blue-100 text-sm sm:text-base max-w-2xl">
+                Manage activities, review volunteer proposals, view impact analytics, and manage portal users.
+              </p>
+            </div>
             <Link
               to="/events"
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-colors shadow-sm"
+              className="inline-flex items-center justify-center bg-amber-400 hover:bg-amber-300 text-[#173b59] font-bold px-6 py-3 rounded-xl transition-colors whitespace-nowrap"
             >
-              Browse Activities
+              Manage Activities →
             </Link>
-            <button
-              onClick={handleLogout}
-              className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-lg transition-colors border border-gray-200 cursor-pointer"
-            >
-              Sign Out
-            </button>
           </div>
-        </div>
+        </section>
 
-        {/* Volunteer Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500 uppercase">My Registrations</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">
-              {myRegistrations.length > 0 ? `${myRegistrations.length} Activities` : '4 Activities'}
-            </p>
-            <p className="text-xs text-emerald-600 font-medium mt-1">Active volunteer</p>
-          </div>
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Link to="/events" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">📅</span>
+            <h3 className="text-xl font-bold text-slate-800">Activities</h3>
+            <p className="text-sm text-slate-500 mt-1">Create and manage events</p>
+          </Link>
+          <Link to="/insights" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">📊</span>
+            <h3 className="text-xl font-bold text-slate-800">Insights</h3>
+            <p className="text-sm text-slate-500 mt-1">View participation analytics</p>
+          </Link>
+          <Link to="/reports" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">📑</span>
+            <h3 className="text-xl font-bold text-slate-800">Reports</h3>
+            <p className="text-sm text-slate-500 mt-1">Generate impact summaries</p>
+          </Link>
+          <Link to="/users" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">👥</span>
+            <h3 className="text-xl font-bold text-slate-800">Users</h3>
+            <p className="text-sm text-slate-500 mt-1">Manage volunteers and SPOCs</p>
+          </Link>
+        </section>
+      </div>
+    );
+  }
 
-          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500 uppercase">Volunteering Hours</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">24 Hours</p>
-            <p className="text-xs text-gray-500 font-medium mt-1">Community impact</p>
-          </div>
-
-          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500 uppercase">Feedback Submitted</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">3 Responses</p>
-            <p className="text-xs text-emerald-600 font-medium mt-1">High feedback engagement</p>
-          </div>
-
-          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500 uppercase">Average Rating Given</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">4.8 / 5 ⭐</p>
-            <p className="text-xs text-gray-500 font-medium mt-1">High satisfaction</p>
-          </div>
-        </div>
-
-        {/* My Registered Activities Section */}
-        {myRegistrations.length > 0 && (
-          <div className="space-y-4 mb-8">
-            <h2 className="text-lg font-bold text-gray-900">My Registered Activities</h2>
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200 font-bold text-gray-500 uppercase">
-                      <th className="p-4">Activity</th>
-                      <th className="p-4">Registration Status</th>
-                      <th className="p-4">Attendance</th>
-                      <th className="p-4 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 font-medium">
-                    {myRegistrations.map((reg) => {
-                      const act = reg.activityId || reg.activity || {};
-                      const isAttended = reg.attendanceStatus === 'attended';
-                      const isCompleted = act.status === 'completed';
-
-                      return (
-                        <tr key={reg._id || reg.id}>
-                          <td className="p-4 font-bold text-gray-900">
-                            {act.title || 'Community Volunteering Drive'}
-                            <span className="block text-[10px] text-gray-400 font-normal">
-                              {act.location || 'Pune Center'}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 font-bold rounded-full border border-blue-200 text-[10px]">
-                              {reg.status || 'Registered'}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span
-                              className={`px-2 py-0.5 font-bold rounded-full text-[10px] ${
-                                isAttended
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}
-                            >
-                              {reg.attendanceStatus || 'Pending'}
-                            </span>
-                          </td>
-                          <td className="p-4 text-right">
-                            {isCompleted && isAttended ? (
-                              <Link
-                                to={`/feedback/new?activityId=${act._id || act.id}`}
-                                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-[10px]"
-                              >
-                                Give Feedback
-                              </Link>
-                            ) : (
-                              <span className="text-[10px] text-gray-400">
-                                {isCompleted ? 'Attendance Pending' : 'Event Upcoming'}
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+  if (role === "spoc" || role === "corporate") {
+    return (
+      <div className="w-full font-sans pb-10">
+        <section className="w-full rounded-3xl bg-gradient-to-r from-[#173b59] to-[#245c7a] text-white px-6 sm:px-8 lg:px-10 py-8 shadow-md mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            <div>
+              <p className="text-sm font-semibold text-blue-100 mb-2">
+                Corporate SPOC Portal
+              </p>
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+                Welcome, <span className="text-amber-400">{user?.name || "Corporate Partner"}</span>
+              </h1>
+              <p className="mt-2 text-blue-100 text-sm sm:text-base max-w-2xl">
+                Track your organization's CSR volunteering drives, employee participation, and impact reports.
+              </p>
             </div>
-          </div>
-        )}
-
-        {/* Available Volunteering Drives */}
-        <div className="space-y-4 mb-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900 font-sans">Upcoming Volunteering Drives</h2>
-            <Link to="/events" className="text-xs font-semibold text-emerald-600 hover:text-emerald-700">
-              Browse All Events →
+            <Link
+              to="/events"
+              className="inline-flex items-center justify-center bg-amber-400 hover:bg-amber-300 text-[#173b59] font-bold px-6 py-3 rounded-xl transition-colors whitespace-nowrap"
+            >
+              Browse Events →
             </Link>
           </div>
+        </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {upcomingActivities.map((evt) => (
-              <div key={evt._id || evt.id} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <StatusBadge status={evt.status || 'open_for_signup'} />
-                    <span className="text-[10px] font-bold text-gray-400 uppercase">
-                      {evt.category || evt.eventType || 'CSR Drive'}
-                    </span>
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+          <Link to="/events" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">📅</span>
+            <h3 className="text-xl font-bold text-slate-800">CSR Activities</h3>
+            <p className="text-sm text-slate-500 mt-1">View active volunteering drives</p>
+          </Link>
+          <Link to="/feedback" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">💬</span>
+            <h3 className="text-xl font-bold text-slate-800">Feedback</h3>
+            <p className="text-sm text-slate-500 mt-1">Review volunteer feedback</p>
+          </Link>
+          <Link to="/reports" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <span className="text-3xl mb-3 block">📊</span>
+            <h3 className="text-xl font-bold text-slate-800">Impact Reports</h3>
+            <p className="text-sm text-slate-500 mt-1">Download CSR reports</p>
+          </Link>
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full font-sans pb-10">
+
+      {/* ================= HERO ================= */}
+      <section className="w-full rounded-3xl bg-gradient-to-r from-[#173b59] to-[#245c7a] text-white px-6 sm:px-8 lg:px-10 py-7 shadow-md mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+
+          <div>
+            <p className="text-sm font-semibold text-blue-100 mb-2">
+              Volunteer Dashboard
+            </p>
+
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Welcome back,{" "}
+              <span className="text-amber-400">
+                {user.name}
+              </span>
+              !
+            </h1>
+
+            <p className="mt-2 text-blue-100 text-sm sm:text-base max-w-2xl">
+              Track your volunteering journey, discover upcoming activities,
+              and see the impact you're making in the community.
+            </p>
+          </div>
+
+          <Link
+            to="/events"
+            className="inline-flex items-center justify-center bg-amber-400 hover:bg-amber-300 text-[#173b59] font-bold px-6 py-3 rounded-xl transition-colors whitespace-nowrap"
+          >
+            Explore Activities →
+          </Link>
+
+        </div>
+      </section>
+
+      {/* ================= STATS ================= */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+
+        <StatCard
+          label="Activities Joined"
+          value={volunteerStats.activitiesJoined}
+          type="blue"
+        />
+
+        <StatCard
+          label="Feedback Submitted"
+          value={volunteerStats.feedbackSubmitted}
+          type="yellow"
+        />
+
+        <StatCard
+          label="Volunteer Hours"
+          value={volunteerStats.volunteerHours}
+          type="green"
+        />
+
+        <StatCard
+          label="Impact Points"
+          value={volunteerStats.impactPoints}
+          type="purple"
+        />
+
+      </section>
+
+      {/* ================= MAIN CONTENT ================= */}
+      <section className="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] gap-6">
+
+        {/* ================= ACTIVITIES ================= */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+
+          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+
+            <div>
+              <h2 className="text-xl font-extrabold text-slate-900">
+                Upcoming Activities
+              </h2>
+
+              <p className="text-sm text-slate-500 mt-1">
+                Activities you have joined or can register for
+              </p>
+            </div>
+
+            <Link
+              to="/events"
+              className="text-sm font-bold text-blue-600 hover:text-blue-800"
+            >
+              View all →
+            </Link>
+
+          </div>
+
+          <div className="divide-y divide-slate-100">
+
+            {upcomingActivities.map((activity) => (
+
+              <div
+                key={activity.id}
+                className="px-6 py-5 hover:bg-slate-50 transition-colors"
+              >
+
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+
+                  {/* Activity information */}
+                  <div className="flex-1 min-w-0">
+
+                    <div className="flex items-center gap-3 mb-2">
+
+                      <h3 className="text-lg font-extrabold text-slate-900 truncate">
+                        {activity.title}
+                      </h3>
+
+                      <StatusBadge status={activity.status} />
+
+                    </div>
+
+                    <p className="text-sm font-semibold text-[#1a4760] mb-3">
+                      {activity.ngo}
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-slate-500">
+
+                      <span>
+                        📅 {activity.date}
+                      </span>
+
+                      <span>
+                        🕐 {activity.time}
+                      </span>
+
+                      <span>
+                        📍 {activity.location}
+                      </span>
+
+                    </div>
+
                   </div>
 
-                  <h3 className="font-bold text-gray-900 text-base">{evt.title || evt.name}</h3>
-                  <p className="text-xs text-gray-600 line-clamp-2">{evt.description}</p>
+                  {/* Actions */}
+                  <div className="flex items-center gap-3 shrink-0">
 
-                  <div className="pt-2 text-xs text-gray-500 space-y-1">
-                    <p>📅 {evt.date || 'Upcoming'}</p>
-                    <p>📍 {evt.location || 'Pune'}</p>
+                    <Link
+                      to={`/events/${activity.id}`}
+                      className="px-4 py-2 rounded-lg border border-slate-300 text-sm font-bold text-slate-700 hover:border-[#173b59] hover:text-[#173b59] transition-colors"
+                    >
+                      View Details
+                    </Link>
+
+                    {activity.status === "Open" && (
+                      <button
+                        className="px-5 py-2 rounded-lg bg-[#173b59] text-white text-sm font-bold hover:bg-[#102d44] transition-colors"
+                      >
+                        Register
+                      </button>
+                    )}
+
                   </div>
+
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-700">
-                    {evt.registeredVolunteersCount || evt.registeredVolunteers || 12} / {evt.maxVolunteers || evt.totalSlots || 30} Slots
-                  </span>
-                  <Link
-                    to={`/events/${evt._id || evt.id}`}
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-colors"
-                  >
-                    View Drive
-                  </Link>
-                </div>
               </div>
+
             ))}
+
           </div>
         </div>
-      </main>
 
-      <Footer />
+        {/* ================= RIGHT SIDEBAR ================= */}
+        <div className="space-y-6">
+
+          {/* Feedback CTA */}
+          <div className="bg-amber-400 rounded-2xl p-6 shadow-sm">
+
+            <div className="w-11 h-11 rounded-xl bg-white/60 flex items-center justify-center mb-4">
+              <span className="text-xl">★</span>
+            </div>
+
+            <h2 className="text-xl font-extrabold text-amber-950">
+              Your Voice Creates Impact
+            </h2>
+
+            <p className="text-sm text-amber-900 mt-2 leading-relaxed">
+              Share your experience and help us improve every volunteering
+              activity.
+            </p>
+
+            <Link
+              to="/feedback/new"
+              className="mt-5 block text-center bg-[#173b59] hover:bg-[#102d44] text-white font-bold py-3 rounded-xl transition-colors"
+            >
+              Share Feedback
+            </Link>
+
+          </div>
+
+          {/* Recent Feedback */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+
+              <div>
+                <h2 className="text-lg font-extrabold text-slate-900">
+                  Recent Feedback
+                </h2>
+
+                <p className="text-xs text-slate-500 mt-1">
+                  Your latest submissions
+                </p>
+              </div>
+
+              <Link
+                to="/feedback"
+                className="text-sm font-bold text-blue-600 hover:text-blue-800"
+              >
+                View all →
+              </Link>
+
+            </div>
+
+            <div className="divide-y divide-slate-100">
+
+              {recentFeedback.map((item) => (
+
+                <div
+                  key={item.id}
+                  className="px-6 py-4 hover:bg-slate-50 transition-colors"
+                >
+
+                  <div className="flex items-start justify-between gap-3">
+
+                    <div className="min-w-0">
+
+                      <h3 className="font-bold text-slate-900 text-sm truncate">
+                        {item.eventName}
+                      </h3>
+
+                      <p className="text-xs text-slate-400 mt-1">
+                        {item.date}
+                      </p>
+
+                    </div>
+
+                    <span className="text-xs font-bold text-slate-500 whitespace-nowrap">
+                      {item.status}
+                    </span>
+
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-3">
+
+                    <span className="text-amber-500 font-bold tracking-wider">
+                      {"★".repeat(item.rating)}
+                      <span className="text-slate-200">
+                        {"★".repeat(5 - item.rating)}
+                      </span>
+                    </span>
+
+                    <span className="text-xs font-bold text-slate-500">
+                      {item.rating}/5
+                    </span>
+
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          </div>
+
+          {/* Impact reminder */}
+          <div className="bg-[#173b59] rounded-2xl p-6 text-white">
+
+            <p className="text-xs uppercase tracking-widest text-blue-200 font-bold">
+              Keep making an impact
+            </p>
+
+            <h3 className="text-xl font-extrabold mt-2">
+              Every hour counts.
+            </h3>
+
+            <p className="text-sm text-blue-100 mt-2 leading-relaxed">
+              Your time, feedback and participation help create meaningful
+              change in the community.
+            </p>
+
+          </div>
+
+        </div>
+
+      </section>
+
     </div>
   );
 };
